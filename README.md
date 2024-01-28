@@ -14,3 +14,8 @@ Version 3.11.6
 
 ### Open-MPI
 Version 5.0.1
+
+## Ideas
+
+- [ ] Research articles about genetic algorithms used for TSP to borrow parameters or strategies on how to change the parameters depending on the input size
+- [ ] Find a reliable way to evaluate the results. Is comparing the best initial route to the best final route meaningful? Maybe compare the final results to the MST of the cities FCG?
