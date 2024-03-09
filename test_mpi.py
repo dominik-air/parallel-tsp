@@ -5,11 +5,13 @@ from math import factorial
 import random
 import time
 
+
 def precompute_factorial(n):
     fact = [1] * (n + 1)
     for i in range(1, n + 1):
         fact[i] = fact[i - 1] * i
     return fact
+
 
 def assign_edge_weights(n, min_weight=1, max_weight=10):
     matrix = np.zeros((n, n), dtype=int)
@@ -19,6 +21,7 @@ def assign_edge_weights(n, min_weight=1, max_weight=10):
             matrix[i, j] = matrix[j, i] = weight
     np.fill_diagonal(matrix, 0)
     return matrix
+
 
 def nth_permutation(arr, n):
     result = []
@@ -30,9 +33,11 @@ def nth_permutation(arr, n):
         n %= f
     return result
 
+
 def find_path_cost(matrix, path):
-    cost = sum(matrix[path[i], path[i+1]] for i in range(len(path)-1))
+    cost = sum(matrix[path[i], path[i + 1]] for i in range(len(path) - 1))
     return cost
+
 
 def main():
     random.seed(123)
@@ -41,9 +46,9 @@ def main():
     size = comm.Get_size()
 
     N = int(sys.argv[1]) if len(sys.argv) > 1 else 5
-    
+
     if rank == 0:
-        fact = precompute_factorial(N-1)
+        fact = precompute_factorial(N - 1)
         matrix = assign_edge_weights(N)
         start_time = time.time()
     else:
@@ -53,14 +58,14 @@ def main():
     fact = comm.bcast(fact, root=0)
     matrix = comm.bcast(matrix, root=0)
 
-    nppe = fact[N-1] // size
-    extra = fact[N-1] % size
+    nppe = fact[N - 1] // size
+    extra = fact[N - 1] % size
     start_ind = rank * nppe + min(rank, extra)
     end_ind = start_ind + nppe - 1
     if rank < extra:
         end_ind += 1
 
-    local_optimal_cost = float('inf')
+    local_optimal_cost = float("inf")
 
     for i in range(start_ind, end_ind + 1):
         perm = nth_permutation(list(range(1, N)), i)
@@ -75,6 +80,7 @@ def main():
         end_time = time.time()
         print(f"Optimal Path Cost: {global_optimal_cost}")
         print(f"Execution Time: {end_time - start_time}")
+
 
 if __name__ == "__main__":
     main()

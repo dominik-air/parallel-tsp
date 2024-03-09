@@ -164,9 +164,19 @@ def run_sequential_GA():
     print("Cost:", best_route.length())
     print("Time elapsed:", end - start)
 
-def run_island_process(distance_matrix, population_size, total_generations, mutation_rate, tournament_size):
-    ga = IslandGA(distance_matrix, population_size, total_generations, mutation_rate, tournament_size)
+
+def run_island_process(
+    distance_matrix, population_size, total_generations, mutation_rate, tournament_size
+):
+    ga = IslandGA(
+        distance_matrix,
+        population_size,
+        total_generations,
+        mutation_rate,
+        tournament_size,
+    )
     return ga.run_island()
+
 
 def run_island_GA():
     num_cities = 500
@@ -175,20 +185,28 @@ def run_island_GA():
 
     population_size = 100
     total_generations = 200
-    mutation_rate = 0.05 
+    mutation_rate = 0.05
     tournament_size = 10
 
     start = time.perf_counter()
 
     with multiprocessing.Pool() as pool:
-        args = (distance_matrix, population_size, total_generations, mutation_rate, tournament_size)
-        results = pool.starmap(run_island_process, [args for _ in range(multiprocessing.cpu_count())])
+        args = (
+            distance_matrix,
+            population_size,
+            total_generations,
+            mutation_rate,
+            tournament_size,
+        )
+        results = pool.starmap(
+            run_island_process, [args for _ in range(multiprocessing.cpu_count())]
+        )
         best_route = min(results, key=lambda route: route.length())
 
     end = time.perf_counter()
 
     print("Cost:", best_route.length())
-    print("Time elapsed:", end-start)
+    print("Time elapsed:", end - start)
 
 
 def run_island_GA_with_MPI():
@@ -203,15 +221,21 @@ def run_island_GA_with_MPI():
         start_time = time.perf_counter()
     else:
         distance_matrix = None
-    
+
     distance_matrix = comm.bcast(distance_matrix, root=0)
 
     population_size = 100
     total_generations = int(300 / size)
-    mutation_rate = 0.05 
+    mutation_rate = 0.05
     tournament_size = 25
 
-    local_best_route = run_island_process(distance_matrix, population_size, total_generations, mutation_rate, tournament_size)
+    local_best_route = run_island_process(
+        distance_matrix,
+        population_size,
+        total_generations,
+        mutation_rate,
+        tournament_size,
+    )
 
     all_routes: List[Route] = comm.gather(local_best_route, root=0)
 
@@ -220,6 +244,7 @@ def run_island_GA_with_MPI():
         best_route = min(all_routes, key=lambda route: route.length())
         print(f"Best route length: {best_route.length()}")
         print(f"Elapsed time: {end_time-start_time}")
+
 
 if __name__ == "__main__":
     run_island_GA_with_MPI()
