@@ -12,8 +12,10 @@ a non-exact algorithm such as Branch&Bound or Genetic Algorithms.
 ### Python
 Version 3.11.6
 
-### Open-MPI
-Version 5.0.1
+### Microsoft MPI
+Version 10.1.3
+
+``` ms-mpi/Bin/mpiexec.exe -n 4 python main.py ```
 
 ## Ideas
 

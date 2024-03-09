@@ -3,6 +3,7 @@ import random
 import multiprocessing
 from typing import List, Tuple
 import numpy as np
+from mpi4py import MPI
 
 
 class DistanceMatrix:
@@ -133,7 +134,7 @@ class IslandGA:
         island_generations = self.total_generations // multiprocessing.cpu_count()
         population = Population(self.population_size, self.distance_matrix)
         initial_best = self.select_best(population)
-        print("Cost:", initial_best.length())
+        print("Initial Cost:", initial_best.length())
         for _ in range(island_generations):
             population.evolve(self.mutation_rate, self.tournament_size)
         return self.select_best(population)
@@ -190,5 +191,35 @@ def run_island_GA():
     print("Time elapsed:", end-start)
 
 
+def run_island_GA_with_MPI():
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+
+    if rank == 0:
+        num_cities = 500
+        matrix = np.random.rand(num_cities, num_cities)
+        distance_matrix = DistanceMatrix(matrix)
+        start_time = time.perf_counter()
+    else:
+        distance_matrix = None
+    
+    distance_matrix = comm.bcast(distance_matrix, root=0)
+
+    population_size = 100
+    total_generations = int(300 / size)
+    mutation_rate = 0.05 
+    tournament_size = 25
+
+    local_best_route = run_island_process(distance_matrix, population_size, total_generations, mutation_rate, tournament_size)
+
+    all_routes: List[Route] = comm.gather(local_best_route, root=0)
+
+    if rank == 0:
+        end_time = time.perf_counter()
+        best_route = min(all_routes, key=lambda route: route.length())
+        print(f"Best route length: {best_route.length()}")
+        print(f"Elapsed time: {end_time-start_time}")
+
 if __name__ == "__main__":
-    run_sequential_GA()
+    run_island_GA_with_MPI()

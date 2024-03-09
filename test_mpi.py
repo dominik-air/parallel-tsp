@@ -35,6 +35,7 @@ def find_path_cost(matrix, path):
     return cost
 
 def main():
+    random.seed(123)
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
