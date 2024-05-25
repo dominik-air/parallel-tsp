@@ -1,10 +1,11 @@
 import time
 import random
 import multiprocessing
+import sys
 from typing import List, Tuple
 import numpy as np
 from mpi4py import MPI
-
+import json
 
 class DistanceMatrix:
     def __init__(self, matrix: np.ndarray) -> None:
@@ -105,10 +106,10 @@ class GeneticAlgorithm:
     def run(self) -> Route:
         population = Population(self.population_size, self.distance_matrix)
         initial_best = self.select_best(population)
-        print("Cost:", initial_best.length())
+        print("Initial Cost:", initial_best.length())
         for _ in range(self.generations):
             population.evolve(self.mutation_rate, self.tournament_size)
-        return self.select_best(population)
+        return self.select_best(population), initial_best.length()
 
     @staticmethod
     def select_best(population: Population) -> Route:
@@ -137,7 +138,7 @@ class IslandGA:
         print("Initial Cost:", initial_best.length())
         for _ in range(island_generations):
             population.evolve(self.mutation_rate, self.tournament_size)
-        return self.select_best(population)
+        return self.select_best(population), initial_best.length()
 
     @staticmethod
     def select_best(population: Population) -> Route:
@@ -158,9 +159,10 @@ def run_sequential_GA():
     ga = GeneticAlgorithm(
         distance_matrix, population_size, generations, mutation_rate, tournament_size
     )
-    best_route = ga.run()
+    best_route, initial_cost = ga.run()
     end = time.perf_counter()
 
+    print("Initial Cost:", initial_cost)
     print("Cost:", best_route.length())
     print("Time elapsed:", end - start)
 
@@ -201,15 +203,16 @@ def run_island_GA():
         results = pool.starmap(
             run_island_process, [args for _ in range(multiprocessing.cpu_count())]
         )
-        best_route = min(results, key=lambda route: route.length())
+        best_route, initial_cost = min(results, key=lambda result: result[0].length())
 
     end = time.perf_counter()
 
+    print("Initial Cost:", initial_cost)
     print("Cost:", best_route.length())
     print("Time elapsed:", end - start)
 
 
-def run_island_GA_with_MPI():
+def run_island_GA_with_MPI(population_size, total_generations, mutation_rate, tournament_size, result_file):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
@@ -224,12 +227,9 @@ def run_island_GA_with_MPI():
 
     distance_matrix = comm.bcast(distance_matrix, root=0)
 
-    population_size = 100
-    total_generations = int(300 / size)
-    mutation_rate = 0.05
-    tournament_size = 25
+    total_generations = int(total_generations / size)
 
-    local_best_route = run_island_process(
+    local_best_route, initial_cost = run_island_process(
         distance_matrix,
         population_size,
         total_generations,
@@ -237,14 +237,41 @@ def run_island_GA_with_MPI():
         tournament_size,
     )
 
-    all_routes: List[Route] = comm.gather(local_best_route, root=0)
+    all_routes: List[Tuple[Route, float]] = comm.gather((local_best_route, initial_cost), root=0)
 
     if rank == 0:
         end_time = time.perf_counter()
-        best_route = min(all_routes, key=lambda route: route.length())
+        best_route, initial_cost = min(all_routes, key=lambda result: result[0].length())
+        elapsed_time = end_time - start_time
+        print(f"Initial Cost: {initial_cost}")
         print(f"Best route length: {best_route.length()}")
-        print(f"Elapsed time: {end_time-start_time}")
+        print(f"Elapsed time: {elapsed_time}")
+        log_results(population_size, total_generations * size, mutation_rate, tournament_size, initial_cost, best_route.length(), elapsed_time, result_file)
+
+
+def log_results(population_size, total_generations, mutation_rate, tournament_size, initial_cost, best_route_length, elapsed_time, result_file):
+    result = {
+        "population_size": population_size,
+        "total_generations": total_generations,
+        "mutation_rate": mutation_rate,
+        "tournament_size": tournament_size,
+        "initial_cost": initial_cost,
+        "best_route_length": best_route_length,
+        "elapsed_time": elapsed_time
+    }
+    with open(result_file, "a") as file:
+        file.write(json.dumps(result) + "\n")
 
 
 if __name__ == "__main__":
-    run_island_GA_with_MPI()
+    if len(sys.argv) != 6:
+        print("Usage: mpirun -n <cores> python main.py <population_size> <total_generations> <mutation_rate> <tournament_size> <result_file>")
+        sys.exit(1)
+
+    population_size = int(sys.argv[1])
+    total_generations = int(sys.argv[2])
+    mutation_rate = float(sys.argv[3])
+    tournament_size = int(sys.argv[4])
+    result_file = sys.argv[5]
+
+    run_island_GA_with_MPI(population_size, total_generations, mutation_rate, tournament_size, result_file)
