@@ -1,0 +1,1 @@
+{"population_size": 500, "total_generations": 100, "mutation_rate": 0.2, "tournament_size": 25, "initial_cost": 231.5737495614615, "best_route_length": 175.88792297032825, "elapsed_time": 53.84415012499812}

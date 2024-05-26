@@ -212,13 +212,12 @@ def run_island_GA():
     print("Time elapsed:", end - start)
 
 
-def run_island_GA_with_MPI(population_size, total_generations, mutation_rate, tournament_size, result_file):
+def run_island_GA_with_MPI(num_cities, population_size, total_generations, mutation_rate, tournament_size, result_file):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
 
     if rank == 0:
-        num_cities = 500
         matrix = np.random.rand(num_cities, num_cities)
         distance_matrix = DistanceMatrix(matrix)
         start_time = time.perf_counter()
@@ -227,7 +226,7 @@ def run_island_GA_with_MPI(population_size, total_generations, mutation_rate, to
 
     distance_matrix = comm.bcast(distance_matrix, root=0)
 
-    total_generations = int(total_generations / size)
+    total_generations = total_generations
 
     local_best_route, initial_cost = run_island_process(
         distance_matrix,
@@ -246,11 +245,12 @@ def run_island_GA_with_MPI(population_size, total_generations, mutation_rate, to
         print(f"Initial Cost: {initial_cost}")
         print(f"Best route length: {best_route.length()}")
         print(f"Elapsed time: {elapsed_time}")
-        log_results(population_size, total_generations * size, mutation_rate, tournament_size, initial_cost, best_route.length(), elapsed_time, result_file)
+        log_results(num_cities, population_size, total_generations * size, mutation_rate, tournament_size, initial_cost, best_route.length(), elapsed_time, result_file)
 
 
-def log_results(population_size, total_generations, mutation_rate, tournament_size, initial_cost, best_route_length, elapsed_time, result_file):
+def log_results(num_cities, population_size, total_generations, mutation_rate, tournament_size, initial_cost, best_route_length, elapsed_time, result_file):
     result = {
+        "num_cities": num_cities,
         "population_size": population_size,
         "total_generations": total_generations,
         "mutation_rate": mutation_rate,
@@ -264,14 +264,15 @@ def log_results(population_size, total_generations, mutation_rate, tournament_si
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 6:
-        print("Usage: mpirun -n <cores> python main.py <population_size> <total_generations> <mutation_rate> <tournament_size> <result_file>")
+    if len(sys.argv) != 7:
+        print("Usage: mpirun -n <cores> python main.py <num_cities> <population_size> <total_generations> <mutation_rate> <tournament_size> <result_file>")
         sys.exit(1)
 
-    population_size = int(sys.argv[1])
-    total_generations = int(sys.argv[2])
-    mutation_rate = float(sys.argv[3])
-    tournament_size = int(sys.argv[4])
-    result_file = sys.argv[5]
+    num_cities = int(sys.argv[1])
+    population_size = int(sys.argv[2])
+    total_generations = int(sys.argv[3])
+    mutation_rate = float(sys.argv[4])
+    tournament_size = int(sys.argv[5])
+    result_file = sys.argv[6]
 
-    run_island_GA_with_MPI(population_size, total_generations, mutation_rate, tournament_size, result_file)
+    run_island_GA_with_MPI(num_cities, population_size, total_generations, mutation_rate, tournament_size, result_file)
