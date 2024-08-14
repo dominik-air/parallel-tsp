@@ -1,11 +1,13 @@
-import time
-import random
+import json
 import multiprocessing
+import random
 import sys
+import time
 from typing import List, Tuple
+
 import numpy as np
 from mpi4py import MPI
-import json
+
 
 class DistanceMatrix:
     def __init__(self, matrix: np.ndarray) -> None:

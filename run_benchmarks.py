@@ -1,6 +1,7 @@
+import os
 import subprocess
 import time
-import os
+
 
 def run_benchmark(cores, num_cities, population_size, total_generations, mutation_rate, tournament_size, result_file):
     command = [

@@ -1,9 +1,10 @@
-from mpi4py import MPI
-import numpy as np
-import sys
-from math import factorial
 import random
+import sys
 import time
+from math import factorial
+
+import numpy as np
+from mpi4py import MPI
 
 
 def precompute_factorial(n):
