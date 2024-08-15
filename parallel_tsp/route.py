@@ -12,7 +12,7 @@ class Route:
         self.distance_matrix = distance_matrix
 
     def length(self) -> float:
-        total_distance = 0
+        total_distance = 0.0
         for i in range(len(self.city_indices)):
             total_distance += self.distance_matrix.distance(
                 self.city_indices[i - 1], self.city_indices[i]

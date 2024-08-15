@@ -14,8 +14,17 @@ class GeneticAlgorithmRunner:
         self.local_optimization_strategy = local_optimization_strategy
 
     def run(self, comm: MPI.Comm):
-        optimized_population = self.local_optimization_strategy.optimize(
-            self.mpi_strategy.population
-        )
+        rank = comm.Get_rank()
+
+        if rank == 0:
+            optimized_population = self.local_optimization_strategy.optimize(
+                self.mpi_strategy.population
+            )
+        else:
+            optimized_population = None
+
+        optimized_population = comm.bcast(optimized_population, root=0)
+
         self.mpi_strategy.population = optimized_population
+
         return self.mpi_strategy.run(comm)

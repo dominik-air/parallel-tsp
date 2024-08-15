@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 
@@ -8,13 +8,17 @@ from .route import Route, crossover
 
 
 class Population:
-    def __init__(self, size: int, distance_matrix: np.ndarray) -> None:
+    def __init__(
+        self, size: int, distance_matrix: np.ndarray, routes: list[Route] | None = None
+    ) -> None:
         self.size = size
         self.distance_matrix = distance_matrix
-        self.routes = [
-            Route(self.random_route(len(distance_matrix)), distance_matrix)
-            for _ in range(size)
-        ]
+        self.routes = routes
+        if self.routes is None:
+            self.routes = [
+                Route(self.random_route(len(distance_matrix)), distance_matrix)
+                for _ in range(size)
+            ]
 
     def random_route(self, num_cities: int) -> List[int]:
         route = list(range(num_cities))
