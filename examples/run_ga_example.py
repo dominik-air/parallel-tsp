@@ -9,7 +9,7 @@ from parallel_tsp.population import combine_populations, generate_populations
 
 
 def main():
-    num_cities = 500
+    num_cities = 100
     distance_matrix = generate_random_distance_matrix(num_cities)
 
     population_size = 100
@@ -22,6 +22,7 @@ def main():
 
     ga = GeneticAlgorithm(
         combined_population,
+        generations,
         mutation_rate,
         tournament_size,
     )

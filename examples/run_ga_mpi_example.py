@@ -7,8 +7,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from parallel_tsp.distance_matrix import generate_random_distance_matrix
 from parallel_tsp.genetic_algorithm import parametrise_genetic_algorithm, select_best
-from parallel_tsp.mpi_strategy import MPIAllToAllMigration, MPIRingMigration
-from parallel_tsp.optimisation_strategy import NoOptimization
+from parallel_tsp.mpi_strategy import MPIAllToAllMigration
+from parallel_tsp.optimisation_strategy import ChristofidesOptimization
 from parallel_tsp.population import Population
 from parallel_tsp.runner import GeneticAlgorithmRunner
 
@@ -29,7 +29,7 @@ def main():
         migrations_count=5,
     )
 
-    local_optimization_strategy = NoOptimization()
+    local_optimization_strategy = ChristofidesOptimization()
 
     runner = GeneticAlgorithmRunner(mpi_strategy, local_optimization_strategy)
 
