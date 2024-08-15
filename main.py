@@ -214,7 +214,14 @@ def run_island_GA():
     print("Time elapsed:", end - start)
 
 
-def run_island_GA_with_MPI(num_cities, population_size, total_generations, mutation_rate, tournament_size, result_file):
+def run_island_GA_with_MPI(
+    num_cities,
+    population_size,
+    total_generations,
+    mutation_rate,
+    tournament_size,
+    result_file,
+):
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     size = comm.Get_size()
@@ -238,19 +245,43 @@ def run_island_GA_with_MPI(num_cities, population_size, total_generations, mutat
         tournament_size,
     )
 
-    all_routes: List[Tuple[Route, float]] = comm.gather((local_best_route, initial_cost), root=0)
+    all_routes: List[Tuple[Route, float]] = comm.gather(
+        (local_best_route, initial_cost), root=0
+    )
 
     if rank == 0:
         end_time = time.perf_counter()
-        best_route, initial_cost = min(all_routes, key=lambda result: result[0].length())
+        best_route, initial_cost = min(
+            all_routes, key=lambda result: result[0].length()
+        )
         elapsed_time = end_time - start_time
         print(f"Initial Cost: {initial_cost}")
         print(f"Best route length: {best_route.length()}")
         print(f"Elapsed time: {elapsed_time}")
-        log_results(num_cities, population_size, total_generations * size, mutation_rate, tournament_size, initial_cost, best_route.length(), elapsed_time, result_file)
+        log_results(
+            num_cities,
+            population_size,
+            total_generations * size,
+            mutation_rate,
+            tournament_size,
+            initial_cost,
+            best_route.length(),
+            elapsed_time,
+            result_file,
+        )
 
 
-def log_results(num_cities, population_size, total_generations, mutation_rate, tournament_size, initial_cost, best_route_length, elapsed_time, result_file):
+def log_results(
+    num_cities,
+    population_size,
+    total_generations,
+    mutation_rate,
+    tournament_size,
+    initial_cost,
+    best_route_length,
+    elapsed_time,
+    result_file,
+):
     result = {
         "num_cities": num_cities,
         "population_size": population_size,
@@ -259,7 +290,7 @@ def log_results(num_cities, population_size, total_generations, mutation_rate, t
         "tournament_size": tournament_size,
         "initial_cost": initial_cost,
         "best_route_length": best_route_length,
-        "elapsed_time": elapsed_time
+        "elapsed_time": elapsed_time,
     }
     with open(result_file, "a") as file:
         file.write(json.dumps(result) + "\n")
@@ -267,7 +298,9 @@ def log_results(num_cities, population_size, total_generations, mutation_rate, t
 
 if __name__ == "__main__":
     if len(sys.argv) != 7:
-        print("Usage: mpirun -n <cores> python main.py <num_cities> <population_size> <total_generations> <mutation_rate> <tournament_size> <result_file>")
+        print(
+            "Usage: mpirun -n <cores> python main.py <num_cities> <population_size> <total_generations> <mutation_rate> <tournament_size> <result_file>"
+        )
         sys.exit(1)
 
     num_cities = int(sys.argv[1])
@@ -277,4 +310,11 @@ if __name__ == "__main__":
     tournament_size = int(sys.argv[5])
     result_file = sys.argv[6]
 
-    run_island_GA_with_MPI(num_cities, population_size, total_generations, mutation_rate, tournament_size, result_file)
+    run_island_GA_with_MPI(
+        num_cities,
+        population_size,
+        total_generations,
+        mutation_rate,
+        tournament_size,
+        result_file,
+    )
