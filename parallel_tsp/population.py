@@ -1,21 +1,24 @@
-import random
-from typing import List
+from typing import List, Tuple
 
-from .distance_matrix import DistanceMatrix
+import numpy as np
+
+from parallel_tsp.distance_matrix import DistanceMatrix
+
 from .route import Route, crossover
 
 
 class Population:
-    def __init__(self, size: int, distance_matrix: DistanceMatrix) -> None:
+    def __init__(self, size: int, distance_matrix: np.ndarray) -> None:
         self.size = size
+        self.distance_matrix = distance_matrix
         self.routes = [
-            Route(self.random_route(len(distance_matrix.matrix)), distance_matrix)
+            Route(self.random_route(len(distance_matrix)), distance_matrix)
             for _ in range(size)
         ]
 
     def random_route(self, num_cities: int) -> List[int]:
         route = list(range(num_cities))
-        random.shuffle(route)
+        np.random.shuffle(route)
         return route
 
     def evolve(self, mutation_rate: float, tournament_size: int) -> None:
@@ -30,16 +33,36 @@ class Population:
         self.routes = sorted(new_routes, key=lambda route: route.length())[: self.size]
 
     def select_parent(self, tournament_size: int) -> Route:
-        tournament = random.sample(self.routes, tournament_size)
+        tournament = np.random.choice(self.routes, tournament_size)
         return min(tournament, key=lambda route: route.length())
 
     def get_subset(self, subset_size: int) -> "Population":
-        if subset_size > self.size:
-            raise ValueError("Subset size cannot be larger than the population size.")
-        subset_routes = random.sample(self.routes, subset_size)
-        new_population = Population(subset_size, self.routes[0].distance_matrix)
-        new_population.routes = subset_routes
-        return new_population
+        subset_routes = np.random.choice(self.routes, subset_size, replace=False)
+        subset_population = Population(subset_size, self.distance_matrix)
+        subset_population.routes = list(subset_routes)
+        return subset_population
+
+    def serialize(self) -> np.ndarray:
+        serialized_data = []
+        for route in self.routes:
+            serialized_data.extend(route.city_indices)
+            serialized_data.append(route.length())
+        return np.array(serialized_data, dtype=np.float64)
+
+    @staticmethod
+    def deserialize(data: np.ndarray, distance_matrix: np.ndarray) -> "Population":
+        route_length = len(distance_matrix)
+        population_size = len(data) // (route_length + 1)
+        population = Population(population_size, distance_matrix)
+
+        for i in range(population_size):
+            start = i * (route_length + 1)
+            end = start + route_length
+            indices = data[start:end].astype(int).tolist()
+
+            population.routes[i] = Route(indices, distance_matrix)
+
+        return population
 
 
 def generate_populations(
