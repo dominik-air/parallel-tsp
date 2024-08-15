@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 
+from networkx.algorithms.approximation import christofides, greedy_tsp
+
 from .population import Population
 from .route import Route
 
@@ -20,8 +22,11 @@ class NoOptimization(OptimizationStrategy):
         return population
 
 
-class TwoOptOptimization(OptimizationStrategy):
+class ChristofidesOptimization(OptimizationStrategy):
     def optimize(self, population: Population) -> Population:
-        for route in population.routes:
-            two_opt(route)
-        return population
+        raise NotImplementedError("todo")
+
+
+class GreedyTSPOptimization(OptimizationStrategy):
+    def optimize(self, population: Population) -> Population:
+        raise NotImplementedError("todo")
