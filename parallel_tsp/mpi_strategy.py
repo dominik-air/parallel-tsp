@@ -8,6 +8,7 @@ from .population import Population, combine_populations
 
 # TODO: try to not use the serialistion and deserialisation
 
+
 class MPIStrategy(ABC):
     def __init__(
         self, genetic_algorithm: ParametrisedGeneticAlgorithm, population: Population
