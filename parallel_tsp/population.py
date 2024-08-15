@@ -33,6 +33,14 @@ class Population:
         tournament = random.sample(self.routes, tournament_size)
         return min(tournament, key=lambda route: route.length())
 
+    def get_subset(self, subset_size: int) -> "Population":
+        if subset_size > self.size:
+            raise ValueError("Subset size cannot be larger than the population size.")
+        subset_routes = random.sample(self.routes, subset_size)
+        new_population = Population(subset_size, self.routes[0].distance_matrix)
+        new_population.routes = subset_routes
+        return new_population
+
 
 def generate_populations(
     num_populations: int, population_size: int, distance_matrix: DistanceMatrix

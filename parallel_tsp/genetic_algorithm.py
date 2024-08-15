@@ -9,10 +9,12 @@ class GeneticAlgorithm:
     def __init__(
         self,
         population: Population,
+        generations: int,
         mutation_rate: float,
         tournament_size: int,
     ) -> None:
         self.population = population
+        self.generations = generations
         self.mutation_rate = mutation_rate
         self.tournament_size = tournament_size
         self.initial_best_route: Route = select_best(self.population.routes)
@@ -39,14 +41,21 @@ ParametrisedGeneticAlgorithm = partial[GeneticAlgorithm]
 
 
 def parametrise_genetic_algorithm(
-    mutation_rate: float, tournament_size: int
+    generations: int, mutation_rate: float, tournament_size: int
 ) -> ParametrisedGeneticAlgorithm:
+
+    if generations < 0:
+        raise ValueError("'generations' should be greater than 0.")
+
+    if tournament_size < 0:
+        raise ValueError("'tournament_size' should be greater than 0.")
 
     if mutation_rate > 1.0 or mutation_rate < 0:
         raise ValueError("'mutation_rate' should be between 0 and 1.")
 
     return partial(
         GeneticAlgorithm,
+        generations=generations,
         mutation_rate=mutation_rate,
         tournament_size=tournament_size,
     )
