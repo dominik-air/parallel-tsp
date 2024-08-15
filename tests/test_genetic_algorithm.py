@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 
 from parallel_tsp.distance_matrix import DistanceMatrix
-from parallel_tsp.genetic_algorithm import GeneticAlgorithm
+from parallel_tsp.genetic_algorithm import GeneticAlgorithm, select_best
 from parallel_tsp.population import Population
 from parallel_tsp.route import Route
 
@@ -23,13 +23,12 @@ def population(distance_matrix):
 @pytest.fixture
 def genetic_algorithm(population):
     return GeneticAlgorithm(
-        population=population, generations=10, mutation_rate=0.05, tournament_size=3
+        population=population, mutation_rate=0.05, tournament_size=3
     )
 
 
 def test_genetic_algorithm_initialization(genetic_algorithm, population):
     assert genetic_algorithm.population == population
-    assert genetic_algorithm.generations == 10
     assert genetic_algorithm.mutation_rate == 0.05
     assert genetic_algorithm.tournament_size == 3
 
@@ -39,7 +38,8 @@ def test_genetic_algorithm_run(genetic_algorithm, population, monkeypatch):
     monkeypatch.setattr(random, "sample", lambda x, k: x[:k])
 
     initial_routes = [route.city_indices for route in population.routes]
-    final_best_route, _ = genetic_algorithm.run()
+    genetic_algorithm.run_iterations(10)
+    final_best_route = genetic_algorithm.best_route
     final_routes = [route.city_indices for route in population.routes]
 
     assert isinstance(final_best_route, Route)
@@ -52,7 +52,7 @@ def test_select_best(genetic_algorithm, population, monkeypatch):
     for route, length in zip(population.routes, route_lengths):
         monkeypatch.setattr(route, "length", lambda length=length: length)
 
-    best_route = genetic_algorithm.select_best(population)
+    best_route = select_best(population.routes)
 
     assert isinstance(best_route, Route)
     assert best_route.length() == 10

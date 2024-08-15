@@ -22,14 +22,15 @@ def main():
 
     ga = GeneticAlgorithm(
         combined_population,
-        generations,
         mutation_rate,
         tournament_size,
     )
-    best_route, initial_cost = ga.run()
 
-    print("Initial Cost:", initial_cost)
-    print("Best route length:", best_route.length())
+    print("Initial best route length:", ga.initial_best_route.length())
+
+    ga.run_iterations(generations)
+
+    print("Best route length:", ga.best_route.length())
 
 
 if __name__ == "__main__":
