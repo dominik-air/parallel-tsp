@@ -69,3 +69,28 @@ def test_combine_populations(distance_matrix):
     assert isinstance(combined_population, Population)
     assert len(combined_population.routes) == 5
     assert combined_population.routes[0].distance_matrix == distance_matrix
+
+
+def test_serialize_and_deserialize_population(population):
+    serialized_data = population.serialize()
+    deserialized_population = Population.deserialize(
+        serialized_data, population.distance_matrix
+    )
+
+    assert len(deserialized_population.routes) == population.size
+    for route1, route2 in zip(population.routes, deserialized_population.routes):
+        assert route1.city_indices == route2.city_indices
+        assert route1.length() == route2.length()
+
+
+def test_get_subset(population):
+    subset_size = 3
+    subset_population = population.get_subset(subset_size)
+
+    assert isinstance(subset_population, Population)
+    assert len(subset_population.routes) == subset_size
+    assert all(route in population.routes for route in subset_population.routes)
+
+
+if __name__ == "__main__":
+    pytest.main()

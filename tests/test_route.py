@@ -61,3 +61,12 @@ def test_crossover_helper(route, distance_matrix):
         child = crossover(parent1, parent2)[0]
 
     assert child.city_indices == [3, 1, 2, 0]
+
+
+def test_mutate_no_change(route, monkeypatch):
+    monkeypatch.setattr(random, "random", lambda: 0.99)
+
+    original_city_indices = route.city_indices[:]
+    route.mutate(mutation_rate=0.05)
+
+    assert route.city_indices == original_city_indices
