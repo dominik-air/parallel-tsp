@@ -39,7 +39,7 @@ def main():
     ga_parameters = parametrise_genetic_algorithm(
         generations=100,
         mutation_rate=0.05,
-        tournament_size=5,
+        tournament_size=10,
     )
 
     ga = ga_parameters(population=optimized_population)

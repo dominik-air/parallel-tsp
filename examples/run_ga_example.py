@@ -13,7 +13,7 @@ def main():
     distance_matrix = generate_random_distance_matrix(num_cities)
 
     population_size = 100
-    generations = 20
+    generations = 100
     mutation_rate = 0.05
     tournament_size = 10
 
