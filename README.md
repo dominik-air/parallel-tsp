@@ -20,8 +20,16 @@ Version 5.0.3
 - [ ] Research articles about genetic algorithms used for TSP to borrow parameters or strategies on how to change the parameters depending on the input size
 - [ ] Find a reliable way to evaluate the results. Is comparing the best initial route to the best final route meaningful? Maybe compare the final results to the MST of the cities FCG?
 
-## Running MPI functional tests
+## Running tests
+
+### Functional
 
 ```bash
-mpirun -n 4 python -m pytest --with-mpi tests/*mpi*.py
+pytest -m functional
+```
+
+### Functional MPI
+
+```bash
+mpirun -n 4 python -m pytest --with-mpi -m mpi
 ```
