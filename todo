@@ -1,5 +1,4 @@
 1. Update requirements.txt or use a more specialised tool
-4. Remove old code
 5. Create a module for benchmarking
 6. Check TODO in `parallel_tsp/mpi_strategy.py`
 7. Add more stop conditions (time elapsed, improved by %)
