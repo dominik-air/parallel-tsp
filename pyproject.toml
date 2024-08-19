@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "parallel-tsp"
+version = "0.1.0"
+description = ""
+authors = ["dominik-air <domzurek@student.agh.edu.pl>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+numpy = "^2.1.0"
+mpi4py = "^4.0.0"
+networkx = "^3.3"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
