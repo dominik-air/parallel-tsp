@@ -1,6 +1,4 @@
 1. Update requirements.txt or use a more specialised tool
-2. Adjust the functional tests parameters to take less time
-3. Extend functional tests to use different combinations of strategies
 4. Remove old code
 5. Create a module for benchmarking
 6. Check TODO in `parallel_tsp/mpi_strategy.py`
