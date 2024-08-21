@@ -3,49 +3,49 @@ from typing import Iterable, Optional
 
 from .population import Population
 from .route import Route
-
+from .stop_condition import StopCondition
 
 class GeneticAlgorithm:
     def __init__(
         self,
         population: Population,
-        generations: int,
         mutation_rate: float,
         tournament_size: int,
+        stop_condition: StopCondition,
     ) -> None:
         self.population = population
-        self.generations = generations
         self.mutation_rate = mutation_rate
         self.tournament_size = tournament_size
         self.initial_best_route: Route = select_best(self.population.routes)
-        self.best_route: Optional[Route] = None
+        self.best_route: Optional[Route] = self.initial_best_route
+        self.generations_run = 0
+        self.stop_condition = stop_condition
+        self.stop_condition.update_initial_best_length(self.initial_best_route.length())
 
     def run_iteration(self) -> None:
         """Runs a single iteration of the genetic algorithm."""
         self.population.evolve(self.mutation_rate, self.tournament_size)
         current_best = select_best(self.population.routes)
-        if self.best_route is None or current_best.length() < self.best_route.length():
+        if current_best.length() < self.best_route.length():
             self.best_route = current_best
+        self.generations_run += 1
 
-    def run_iterations(self, num_iterations: int) -> None:
-        """Runs the genetic algorithm for a given number of iterations."""
-        for _ in range(num_iterations):
+    def run(self) -> None:
+        """Runs the genetic algorithm until the stop condition is met."""
+        while not self.stop_condition.should_stop(
+            generations_run=self.generations_run,
+            current_best_length=self.best_route.length()
+        ):
             self.run_iteration()
-
 
 def select_best(routes: Iterable[Route]) -> Route:
     return min(routes, key=lambda route: route.length())
 
-
-ParametrisedGeneticAlgorithm = partial[GeneticAlgorithm]
-
+ParametrisedGeneticAlgorithm = partial(GeneticAlgorithm)
 
 def parametrise_genetic_algorithm(
-    generations: int, mutation_rate: float, tournament_size: int
+    mutation_rate: float, tournament_size: int, stop_condition: StopCondition
 ) -> ParametrisedGeneticAlgorithm:
-
-    if generations < 0:
-        raise ValueError("'generations' should be greater than 0.")
 
     if tournament_size < 0:
         raise ValueError("'tournament_size' should be greater than 0.")
@@ -55,7 +55,7 @@ def parametrise_genetic_algorithm(
 
     return partial(
         GeneticAlgorithm,
-        generations=generations,
         mutation_rate=mutation_rate,
         tournament_size=tournament_size,
+        stop_condition=stop_condition,
     )

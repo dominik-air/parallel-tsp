@@ -1,6 +1,6 @@
 import os
 import sys
-
+import time
 from mpi4py import MPI
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -11,7 +11,7 @@ from parallel_tsp.mpi_strategy import MPIAllToAllMigration
 from parallel_tsp.optimisation_strategy import ChristofidesOptimization
 from parallel_tsp.population import Population
 from parallel_tsp.runner import GeneticAlgorithmRunner
-
+from parallel_tsp.stop_condition import StopCondition  
 
 def main():
     comm = MPI.COMM_WORLD
@@ -20,9 +20,15 @@ def main():
     distance_matrix = generate_random_distance_matrix(100)
     population = Population(size=100, distance_matrix=distance_matrix)
 
+    stop_condition = StopCondition(
+        max_generations=100,
+        improvement_percentage=50,  
+        max_time_seconds=10  
+    )
+
     mpi_strategy = MPIAllToAllMigration(
         genetic_algorithm=parametrise_genetic_algorithm(
-            generations=100, mutation_rate=0.05, tournament_size=10
+            mutation_rate=0.05, tournament_size=10, stop_condition=stop_condition
         ),
         population=population,
         migration_size=25,
@@ -34,12 +40,15 @@ def main():
     runner = GeneticAlgorithmRunner(mpi_strategy, local_optimization_strategy)
 
     if rank == 0:
-        print("Best initial route length:", select_best(population.routes).length())
+        initial_best_length = select_best(population.routes).length()
+        stop_condition.update_initial_best_length(initial_best_length)
+        print("Best initial route length:", initial_best_length)
 
     best_route = runner.run(comm)
 
     if rank == 0:
-        print("Best route length:", best_route.length())
+        final_best_length = best_route.length()
+        print("Best route length:", final_best_length)
 
 
 if __name__ == "__main__":

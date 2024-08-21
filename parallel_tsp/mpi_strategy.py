@@ -26,7 +26,7 @@ class MPINoMigration(MPIStrategy):
 
         ga = self.genetic_algorithm_partial(population=self.population)
 
-        ga.run_iterations(ga.generations)
+        ga.run()
         best_route = ga.best_route
         all_best_routes = comm.gather(best_route, root=0)
 
@@ -75,8 +75,9 @@ class MPIRingMigration(MPIStrategy):
 
             comm.Barrier()
 
-            iterations = ga.generations // self.migrations_count
-            ga.run_iterations(iterations)
+            iterations = ga.stop_condition.max_generations // self.migrations_count
+            for _ in range(iterations):
+                ga.run_iteration()
 
         best_route = ga.best_route
         all_best_routes = comm.gather(best_route, root=0)
@@ -134,8 +135,9 @@ class MPIAllToAllMigration(MPIStrategy):
 
             comm.Barrier()
 
-            iterations = ga.generations // self.migrations_count
-            ga.run_iterations(iterations)
+            iterations = ga.stop_condition.max_generations // self.migrations_count
+            for _ in range(iterations):
+                ga.run_iteration()
 
         best_route = ga.best_route
         all_best_routes = comm.gather(best_route, root=0)
