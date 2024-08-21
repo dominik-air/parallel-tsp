@@ -6,8 +6,6 @@ from mpi4py import MPI
 from .genetic_algorithm import ParametrisedGeneticAlgorithm
 from .population import Population, combine_populations
 
-# TODO: try to not use the serialistion and deserialisation
-
 
 class MPIStrategy(ABC):
     def __init__(
