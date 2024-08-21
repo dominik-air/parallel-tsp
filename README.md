@@ -10,7 +10,7 @@ a non-exact algorithm such as Branch&Bound or Genetic Algorithms.
 ## Project dependencies
 
 ### Python
-Version 3.11.6
+Version 3.12
 
 ### Open MPI
 Version 5.0.3
