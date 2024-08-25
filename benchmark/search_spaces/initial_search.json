@@ -1,0 +1,30 @@
+{
+    "ga": {
+        "mutation_rate": [0.05, 0.1, 0.2],
+        "tournament_size": [5, 10, 15],
+        "stop_condition": [
+            {"max_generations": 10},
+            {"max_generations": 20},
+            {"max_generations": 30}
+        ]
+    },
+    "mpi": {
+        "mpi_strategy": ["MPINoMigration", "MPIRingMigration", "MPIAllToAllMigration"],
+        "population": [
+            {"size": 50, "num_cities": 20},
+            {"size": 100, "num_cities": 50}
+        ],
+        "strategy_params": [
+            {"migration_size": 10, "migrations_count": 2},
+            {"migration_size": 20, "migrations_count": 10}
+        ],
+        "comm": "MPI_COMM_WORLD"
+    },
+    "opt": {
+        "optimization_strategy": [
+            "NoOptimization",
+            "ChristofidesOptimization",
+            "GreedyTSPOptimization"
+        ]
+    }
+}
