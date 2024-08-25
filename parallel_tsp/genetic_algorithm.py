@@ -18,7 +18,7 @@ class GeneticAlgorithm:
         self.mutation_rate = mutation_rate
         self.tournament_size = tournament_size
         self.initial_best_route: Route = select_best(self.population.routes)
-        self.best_route: Optional[Route] = self.initial_best_route
+        self.best_route: Route = self.initial_best_route
         self.generations_run = 0
         self.stop_condition = stop_condition
         self.stop_condition.update_initial_best_length(self.initial_best_route.length())

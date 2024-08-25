@@ -13,6 +13,7 @@ from parallel_tsp.optimisation_strategy import (
     NoOptimization,
 )
 from parallel_tsp.population import Population
+from parallel_tsp.stop_condition import StopCondition
 
 
 @pytest.mark.functional
@@ -44,14 +45,14 @@ def test_genetic_algorithm_with_christofides_optimization():
         optimized_best_length <= initial_best_length
     ), f"Optimized route length ({optimized_best_length}) should be less than or equal to initial length ({initial_best_length})"
 
+    stop_condition = StopCondition(max_generations=20)
+
     ga_parameters = parametrise_genetic_algorithm(
-        generations=50,
-        mutation_rate=0.05,
-        tournament_size=5,
+        mutation_rate=0.05, tournament_size=5, stop_condition=stop_condition
     )
 
     ga = ga_parameters(population=optimized_population)
-    ga.run_iterations(ga.generations)
+    ga.run()
 
     final_best_route = ga.best_route
     final_best_length = final_best_route.length()
@@ -91,14 +92,14 @@ def test_genetic_algorithm_with_greedy_optimization():
         optimized_best_length <= initial_best_length
     ), f"Optimized route length ({optimized_best_length}) should be less than or equal to initial length ({initial_best_length})"
 
+    stop_condition = StopCondition(max_generations=20)
+
     ga_parameters = parametrise_genetic_algorithm(
-        generations=50,
-        mutation_rate=0.05,
-        tournament_size=5,
+        mutation_rate=0.05, tournament_size=5, stop_condition=stop_condition
     )
 
     ga = ga_parameters(population=optimized_population)
-    ga.run_iterations(ga.generations)
+    ga.run()
 
     final_best_route = ga.best_route
     final_best_length = final_best_route.length()
@@ -138,14 +139,14 @@ def test_genetic_algorithm_with_no_optimization():
         optimized_best_length == initial_best_length
     ), f"Optimized route length ({optimized_best_length}) should be equal to initial length ({initial_best_length})"
 
+    stop_condition = StopCondition(max_generations=20)
+
     ga_parameters = parametrise_genetic_algorithm(
-        generations=50,
-        mutation_rate=0.05,
-        tournament_size=5,
+        mutation_rate=0.05, tournament_size=5, stop_condition=stop_condition
     )
 
     ga = ga_parameters(population=optimized_population)
-    ga.run_iterations(ga.generations)
+    ga.run()
 
     final_best_route = ga.best_route
     final_best_length = final_best_route.length()

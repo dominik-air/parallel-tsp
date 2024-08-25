@@ -4,10 +4,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from parallel_tsp.distance_matrix import generate_random_distance_matrix
-from parallel_tsp.genetic_algorithm import (
-    GeneticAlgorithm,
-    parametrise_genetic_algorithm,
-)
+from parallel_tsp.genetic_algorithm import parametrise_genetic_algorithm
 from parallel_tsp.population import combine_populations, generate_populations
 from parallel_tsp.stop_condition import StopCondition
 

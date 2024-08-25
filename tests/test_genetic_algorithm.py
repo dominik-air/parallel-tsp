@@ -12,6 +12,7 @@ from parallel_tsp.genetic_algorithm import (
 )
 from parallel_tsp.population import Population
 from parallel_tsp.route import Route
+from parallel_tsp.stop_condition import StopCondition
 
 
 @pytest.fixture
@@ -28,17 +29,19 @@ def population(distance_matrix):
 @pytest.fixture
 def genetic_algorithm(population):
     return GeneticAlgorithm(
-        population=population, generations=10, mutation_rate=0.05, tournament_size=3
+        population=population,
+        mutation_rate=0.05,
+        tournament_size=3,
+        stop_condition=StopCondition(max_generations=10),
     )
 
 
 def test_genetic_algorithm_initialization(genetic_algorithm, population):
     assert genetic_algorithm.population == population
-    assert genetic_algorithm.generations == 10
     assert genetic_algorithm.mutation_rate == 0.05
     assert genetic_algorithm.tournament_size == 3
     assert isinstance(genetic_algorithm.initial_best_route, Route)
-    assert genetic_algorithm.best_route is None
+    assert genetic_algorithm.best_route is genetic_algorithm.initial_best_route
 
 
 def test_genetic_algorithm_run_iterations(genetic_algorithm, population, monkeypatch):
@@ -46,7 +49,7 @@ def test_genetic_algorithm_run_iterations(genetic_algorithm, population, monkeyp
     monkeypatch.setattr(random, "sample", lambda x, k: x[:k])
 
     initial_routes = [route.city_indices for route in population.routes]
-    genetic_algorithm.run_iterations(10)
+    genetic_algorithm.run()
     final_best_route = genetic_algorithm.best_route
     final_routes = [route.city_indices for route in population.routes]
 
@@ -69,11 +72,12 @@ def test_select_best(genetic_algorithm, population, monkeypatch):
 
 def test_parametrise_genetic_algorithm():
     parametrized_ga = parametrise_genetic_algorithm(
-        generations=20, mutation_rate=0.1, tournament_size=3
+        mutation_rate=0.1,
+        tournament_size=3,
+        stop_condition=StopCondition(max_generations=10),
     )
 
     assert isinstance(parametrized_ga, partial)
-    assert parametrized_ga.keywords["generations"] == 20
     assert parametrized_ga.keywords["mutation_rate"] == 0.1
     assert parametrized_ga.keywords["tournament_size"] == 3
 
@@ -81,22 +85,23 @@ def test_parametrise_genetic_algorithm():
 def test_parametrise_genetic_algorithm_invalid_inputs():
     with pytest.raises(ValueError):
         parametrise_genetic_algorithm(
-            generations=-1, mutation_rate=0.1, tournament_size=3
+            mutation_rate=1.1,
+            tournament_size=3,
+            stop_condition=StopCondition(max_generations=10),
         )
 
     with pytest.raises(ValueError):
         parametrise_genetic_algorithm(
-            generations=10, mutation_rate=1.1, tournament_size=3
+            mutation_rate=-0.1,
+            tournament_size=3,
+            stop_condition=StopCondition(max_generations=10),
         )
 
     with pytest.raises(ValueError):
         parametrise_genetic_algorithm(
-            generations=10, mutation_rate=-0.1, tournament_size=3
-        )
-
-    with pytest.raises(ValueError):
-        parametrise_genetic_algorithm(
-            generations=10, mutation_rate=0.1, tournament_size=-1
+            mutation_rate=0.1,
+            tournament_size=-1,
+            stop_condition=StopCondition(max_generations=10),
         )
 
 

@@ -16,6 +16,7 @@ from parallel_tsp.mpi_strategy import (
 from parallel_tsp.optimisation_strategy import ChristofidesOptimization
 from parallel_tsp.population import Population
 from parallel_tsp.runner import GeneticAlgorithmRunner
+from parallel_tsp.stop_condition import StopCondition
 
 
 @pytest.mark.mpi(min_size=4)
@@ -26,9 +27,11 @@ def test_mpi_all_to_all_migration():
     distance_matrix = generate_random_distance_matrix(100)
     population = Population(size=100, distance_matrix=distance_matrix)
 
+    stop_condition = StopCondition(max_generations=50)
+
     mpi_strategy = MPIAllToAllMigration(
         genetic_algorithm=parametrise_genetic_algorithm(
-            generations=50, mutation_rate=0.05, tournament_size=10
+            mutation_rate=0.05, tournament_size=10, stop_condition=stop_condition
         ),
         population=population,
         migration_size=25,
@@ -63,9 +66,11 @@ def test_mpi_ring_migration():
     distance_matrix = generate_random_distance_matrix(100)
     population = Population(size=100, distance_matrix=distance_matrix)
 
+    stop_condition = StopCondition(max_generations=50)
+
     mpi_strategy = MPIRingMigration(
         genetic_algorithm=parametrise_genetic_algorithm(
-            generations=50, mutation_rate=0.05, tournament_size=10
+            mutation_rate=0.05, tournament_size=10, stop_condition=stop_condition
         ),
         population=population,
         migration_size=25,
@@ -100,9 +105,11 @@ def test_mpi_no_migration():
     distance_matrix = generate_random_distance_matrix(100)
     population = Population(size=100, distance_matrix=distance_matrix)
 
+    stop_condition = StopCondition(max_generations=50)
+
     mpi_strategy = MPINoMigration(
         genetic_algorithm=parametrise_genetic_algorithm(
-            generations=50, mutation_rate=0.05, tournament_size=10
+            mutation_rate=0.05, tournament_size=10, stop_condition=stop_condition
         ),
         population=population,
     )
