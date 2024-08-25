@@ -5,6 +5,7 @@ from .population import Population
 from .route import Route
 from .stop_condition import StopCondition
 
+
 class GeneticAlgorithm:
     def __init__(
         self,
@@ -34,14 +35,17 @@ class GeneticAlgorithm:
         """Runs the genetic algorithm until the stop condition is met."""
         while not self.stop_condition.should_stop(
             generations_run=self.generations_run,
-            current_best_length=self.best_route.length()
+            current_best_length=self.best_route.length(),
         ):
             self.run_iteration()
+
 
 def select_best(routes: Iterable[Route]) -> Route:
     return min(routes, key=lambda route: route.length())
 
-ParametrisedGeneticAlgorithm = partial(GeneticAlgorithm)
+
+ParametrisedGeneticAlgorithm = partial[GeneticAlgorithm]
+
 
 def parametrise_genetic_algorithm(
     mutation_rate: float, tournament_size: int, stop_condition: StopCondition
