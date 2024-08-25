@@ -1,4 +1,13 @@
 import time
+from enum import Enum
+
+
+class StopConditionType(str, Enum):
+    """Enum for different types of stopping conditions."""
+
+    MAX_GENERATIONS = "max_generations"
+    IMPROVEMENT_PERCENTAGE = "improvement_percentage"
+    MAX_TIME_SECONDS = "max_time_seconds"
 
 
 class StopCondition:
@@ -15,7 +24,7 @@ class StopCondition:
         start_time (float | None): The start time of the algorithm, used for time-based stopping.
         initial_best_length (float | None): The length of the best route at the start of the algorithm,
             used for improvement-based stopping.
-        triggered_condition (str | None): The condition that triggered the stopping of the algorithm.
+        triggered_condition (StopConditionType | None): The condition that triggered the stopping of the algorithm.
     """
 
     def __init__(
@@ -61,7 +70,7 @@ class StopCondition:
             bool: True if the algorithm should stop, False otherwise.
         """
         if self.max_generations is not None and generations_run >= self.max_generations:
-            self.triggered_condition = "max_generations"
+            self.triggered_condition = StopConditionType.MAX_GENERATIONS
             return True
 
         if self.improvement_percentage is not None:
@@ -75,22 +84,22 @@ class StopCondition:
                 * 100
             )
             if improvement >= self.improvement_percentage:
-                self.triggered_condition = "improvement_percentage"
+                self.triggered_condition = StopConditionType.IMPROVEMENT_PERCENTAGE
                 return True
 
         if self.max_time_seconds is not None:
             elapsed_time = time.perf_counter() - self.start_time
             if elapsed_time >= self.max_time_seconds:
-                self.triggered_condition = "max_time_seconds"
+                self.triggered_condition = StopConditionType.MAX_TIME_SECONDS
                 return True
 
         return False
 
-    def get_triggered_condition(self) -> str:
+    def get_triggered_condition(self) -> StopConditionType | None:
         """Returns the condition that triggered the stopping of the algorithm.
 
         Returns:
-            str: The condition that triggered the stopping, such as 'max_generations',
-            'improvement_percentage', or 'max_time_seconds'.
+            StopConditionType | None: The condition that triggered the stopping, such as 'MAX_GENERATIONS',
+            'IMPROVEMENT_PERCENTAGE', or 'MAX_TIME_SECONDS'.
         """
         return self.triggered_condition
