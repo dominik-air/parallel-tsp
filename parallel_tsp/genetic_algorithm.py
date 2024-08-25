@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Iterable, Optional
+from typing import Iterable
 
 from .population import Population
 from .route import Route

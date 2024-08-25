@@ -1,12 +1,11 @@
 import random
-from typing import List, Tuple
 
 from .distance_matrix import DistanceMatrix
 
 
 class Route:
     def __init__(
-        self, city_indices: List[int], distance_matrix: DistanceMatrix
+        self, city_indices: list[int], distance_matrix: DistanceMatrix
     ) -> None:
         self.city_indices = city_indices
         self.distance_matrix = distance_matrix
@@ -28,7 +27,7 @@ class Route:
             )
 
 
-def crossover(parent1: Route, parent2: Route) -> Tuple[Route, Route]:
+def crossover(parent1: Route, parent2: Route) -> tuple[Route, Route]:
     def crossover_helper(parent1: Route, parent2: Route) -> Route:
         start, end = sorted(random.sample(range(len(parent1.city_indices)), 2))
         child = [None] * len(parent1.city_indices)
