@@ -7,6 +7,18 @@ from .stop_condition import StopCondition
 
 
 class GeneticAlgorithm:
+    """Represents a genetic algorithm for solving the Traveling Salesman Problem (TSP).
+
+    Attributes:
+        population (Population): The population of routes to evolve.
+        mutation_rate (float): The probability of mutation in each generation.
+        tournament_size (int): The number of routes selected for the tournament in each generation.
+        stop_condition (StopCondition): The condition that determines when the algorithm should stop.
+        initial_best_route (Route): The best route found at the start of the algorithm.
+        best_route (Route): The best route found so far.
+        generations_run (int): The number of generations that have been run.
+    """
+
     def __init__(
         self,
         population: Population,
@@ -14,6 +26,14 @@ class GeneticAlgorithm:
         tournament_size: int,
         stop_condition: StopCondition,
     ) -> None:
+        """Initializes the GeneticAlgorithm with the given parameters.
+
+        Args:
+            population (Population): The population of routes to evolve.
+            mutation_rate (float): The probability of mutation in each generation.
+            tournament_size (int): The number of routes selected for the tournament in each generation.
+            stop_condition (StopCondition): The condition that determines when the algorithm should stop.
+        """
         self.population = population
         self.mutation_rate = mutation_rate
         self.tournament_size = tournament_size
@@ -24,7 +44,11 @@ class GeneticAlgorithm:
         self.stop_condition.update_initial_best_length(self.initial_best_route.length())
 
     def run_iteration(self) -> None:
-        """Runs a single iteration of the genetic algorithm."""
+        """Runs a single iteration of the genetic algorithm.
+
+        During each iteration, the population evolves by selecting, mutating, and
+        recombining routes, and the best route is updated.
+        """
         self.population.evolve(self.mutation_rate, self.tournament_size)
         current_best = select_best(self.population.routes)
         if current_best.length() < self.best_route.length():
@@ -32,7 +56,11 @@ class GeneticAlgorithm:
         self.generations_run += 1
 
     def run(self) -> None:
-        """Runs the genetic algorithm until the stop condition is met."""
+        """Runs the genetic algorithm until the stop condition is met.
+
+        The algorithm continuously evolves the population until the stopping condition
+        is satisfied, updating the best route found so far.
+        """
         while not self.stop_condition.should_stop(
             generations_run=self.generations_run,
             current_best_length=self.best_route.length(),
@@ -41,6 +69,14 @@ class GeneticAlgorithm:
 
 
 def select_best(routes: Iterable[Route]) -> Route:
+    """Selects the best route from a given set of routes.
+
+    Args:
+        routes (Iterable[Route]): An iterable of routes to select from.
+
+    Returns:
+        Route: The route with the shortest length.
+    """
     return min(routes, key=lambda route: route.length())
 
 
@@ -50,7 +86,20 @@ ParametrisedGeneticAlgorithm = partial[GeneticAlgorithm]
 def parametrise_genetic_algorithm(
     mutation_rate: float, tournament_size: int, stop_condition: StopCondition
 ) -> ParametrisedGeneticAlgorithm:
+    """Creates a partially parametrized GeneticAlgorithm class.
 
+    Args:
+        mutation_rate (float): The probability of mutation in each generation.
+        tournament_size (int): The number of routes selected for the tournament in each generation.
+        stop_condition (StopCondition): The condition that determines when the algorithm should stop.
+
+    Returns:
+        ParametrisedGeneticAlgorithm: A partial object of GeneticAlgorithm with the specified parameters.
+
+    Raises:
+        ValueError: If the tournament_size is less than 0.
+        ValueError: If the mutation_rate is not between 0 and 1.
+    """
     if tournament_size < 0:
         raise ValueError("'tournament_size' should be greater than 0.")
 

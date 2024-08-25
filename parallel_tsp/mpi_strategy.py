@@ -8,20 +8,47 @@ from .population import Population, combine_populations
 
 
 class MPIStrategy(ABC):
+    """Abstract base class for MPI strategies in a parallel genetic algorithm.
+
+    Attributes:
+        genetic_algorithm_partial (ParametrisedGeneticAlgorithm): A partial object of the genetic algorithm.
+        population (Population): The population to be evolved.
+    """
+
     def __init__(
         self, genetic_algorithm: ParametrisedGeneticAlgorithm, population: Population
     ):
+        """Initializes the MPIStrategy with the given genetic algorithm and population.
+
+        Args:
+            genetic_algorithm (ParametrisedGeneticAlgorithm): The genetic algorithm to be used in the strategy.
+            population (Population): The population to be evolved.
+        """
         self.genetic_algorithm_partial = genetic_algorithm
         self.population = population
 
     @abstractmethod
     def run(self, comm: MPI.Comm):
-        """Run the evolutionary algorithm using the defined MPI strategy."""
+        """Run the evolutionary algorithm using the defined MPI strategy.
+
+        Args:
+            comm (MPI.Comm): The MPI communicator to be used for communication between processes.
+        """
         pass
 
 
 class MPINoMigration(MPIStrategy):
+    """MPI strategy where no migration occurs between different processes."""
+
     def run(self, comm: MPI.Comm):
+        """Runs the genetic algorithm on each process without any migration.
+
+        Args:
+            comm (MPI.Comm): The MPI communicator used for communication between processes.
+
+        Returns:
+            Route: The best route found across all processes.
+        """
         rank = comm.Get_rank()
 
         ga = self.genetic_algorithm_partial(population=self.population)
@@ -36,6 +63,13 @@ class MPINoMigration(MPIStrategy):
 
 
 class MPIRingMigration(MPIStrategy):
+    """MPI strategy where migration occurs in a ring topology between processes.
+
+    Attributes:
+        migration_size (int): The number of individuals to migrate between processes.
+        migrations_count (int): The number of migrations to perform.
+    """
+
     def __init__(
         self,
         genetic_algorithm: ParametrisedGeneticAlgorithm,
@@ -43,11 +77,30 @@ class MPIRingMigration(MPIStrategy):
         migration_size: int,
         migrations_count: int,
     ):
+        """Initializes the MPIRingMigration strategy with the given parameters.
+
+        Args:
+            genetic_algorithm (ParametrisedGeneticAlgorithm): The genetic algorithm to be used in the strategy.
+            population (Population): The population to be evolved.
+            migration_size (int): The number of individuals to migrate between processes.
+            migrations_count (int): The number of migrations to perform.
+        """
         super().__init__(genetic_algorithm, population)
         self.migration_size = migration_size
         self.migrations_count = migrations_count
 
     def run(self, comm: MPI.Comm):
+        """Runs the genetic algorithm with ring migration between processes.
+
+        In each migration, a subset of the population is sent to the next process
+        and received from the previous process in the ring topology.
+
+        Args:
+            comm (MPI.Comm): The MPI communicator used for communication between processes.
+
+        Returns:
+            Route: The best route found across all processes.
+        """
         ga = self.genetic_algorithm_partial(population=self.population)
 
         for _ in range(self.migrations_count):
@@ -88,6 +141,13 @@ class MPIRingMigration(MPIStrategy):
 
 
 class MPIAllToAllMigration(MPIStrategy):
+    """MPI strategy where migration occurs between all processes (all-to-all migration).
+
+    Attributes:
+        migration_size (int): The number of individuals to migrate between processes.
+        migrations_count (int): The number of migrations to perform.
+    """
+
     def __init__(
         self,
         genetic_algorithm: ParametrisedGeneticAlgorithm,
@@ -95,11 +155,29 @@ class MPIAllToAllMigration(MPIStrategy):
         migration_size: int,
         migrations_count: int,
     ):
+        """Initializes the MPIAllToAllMigration strategy with the given parameters.
+
+        Args:
+            genetic_algorithm (ParametrisedGeneticAlgorithm): The genetic algorithm to be used in the strategy.
+            population (Population): The population to be evolved.
+            migration_size (int): The number of individuals to migrate between processes.
+            migrations_count (int): The number of migrations to perform.
+        """
         super().__init__(genetic_algorithm, population)
         self.migration_size = migration_size
         self.migrations_count = migrations_count
 
     def run(self, comm: MPI.Comm):
+        """Runs the genetic algorithm with all-to-all migration between processes.
+
+        In each migration, subsets of the population are exchanged between all pairs of processes.
+
+        Args:
+            comm (MPI.Comm): The MPI communicator used for communication between processes.
+
+        Returns:
+            Route: The best route found across all processes.
+        """
         ga = self.genetic_algorithm_partial(population=self.population)
 
         for _ in range(self.migrations_count):
