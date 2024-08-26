@@ -1,2 +1,2 @@
-5. Create a module for benchmarking
-8. Create a new notebook with analysis
+1. Add loader for tsplib problems
+2. Add loader for generated problems (from bachelor's thesis)
