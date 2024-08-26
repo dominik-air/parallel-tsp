@@ -26,3 +26,9 @@ pytest -m functional
 ```bash
 mpirun -n 4 python -m pytest --with-mpi -m mpi
 ```
+
+## Running benchmark
+
+```bash
+for cores in {1..8}; do echo "Running with $cores cores"; time mpiexec -n $cores python benchmark/hyperparameter_search.py; done
+```
