@@ -101,9 +101,7 @@ def run_benchmark(
 
 def grid_search(search_space: dict[str, dict[str, Any]]) -> dict[str, Any]:
     """Perform a grid search over the parameter space."""
-    mpi_classes = search_space["mpi"]["mpi_strategy"]
-    opt_classes = search_space["opt"]["optimization_strategy"]
-
+    # Add mpi_strategy and optimization_strategy to the combinations
     param_combinations = list(
         itertools.product(
             *[
@@ -119,20 +117,30 @@ def grid_search(search_space: dict[str, dict[str, Any]]) -> dict[str, Any]:
     )
 
     all_results = []
+    iteration = 0
 
-    for mpi_class in mpi_classes:
-        for opt_class in opt_classes:
-            for param_set in param_combinations:
-                param_dict = {}
-                for outer_key, inner_dict in param_set:
-                    if outer_key not in param_dict:
-                        param_dict[outer_key] = {}
-                    param_dict[outer_key].update(inner_dict)
+    for param_set in param_combinations:
+        param_dict = {}
+        for outer_key, inner_dict in param_set:
+            if outer_key not in param_dict:
+                param_dict[outer_key] = {}
+            param_dict[outer_key].update(inner_dict)
 
-                result = run_benchmark(mpi_class, opt_class, param_dict)
-                all_results.append(result)
+        mpi_class = param_dict["mpi"]["mpi_strategy"]
+        opt_class = param_dict["opt"]["optimization_strategy"]
+
+        del param_dict["mpi"]["mpi_strategy"]
+        del param_dict["opt"]["optimization_strategy"]
+
+        result = run_benchmark(mpi_class, opt_class, param_dict)
+        
+        if iteration % 1 == 0:
+            print(f'I am not stuck: {iteration}')
+        iteration += 1
+        all_results.append(result)
 
     return all_results
+
 
 
 def save_results_to_json(file_name: str, data: Any):
@@ -146,37 +154,58 @@ def main():
     rank = comm.Get_rank()
     size = comm.Get_size()
 
+    # search_space = {
+    #     "ga": {
+    #         "mutation_rate": [0.05, 0.1, 0.2],
+    #         "tournament_size": [5, 10, 15],
+    #         "stop_condition": [
+    #             StopCondition(max_generations=40),
+    #         ],
+    #     },
+    #     "mpi": {
+    #         "mpi_strategy": [MPINoMigration, MPIRingMigration, MPIAllToAllMigration],
+    #         "population": [
+    #             Population(
+    #                 size=30, distance_matrix=generate_random_distance_matrix(50)
+    #             ),
+    #         ],
+    #         "strategy_params": [
+    #             {"migration_size": 5, "migrations_count": 2},
+    #             {"migration_size": 5, "migrations_count": 8},
+    #             {"migration_size": 15, "migrations_count": 2},
+    #             {"migration_size": 15, "migrations_count": 8},
+    #         ],
+    #         "comm": [comm],
+    #     },
+    #     "opt": {
+    #         "optimization_strategy": [
+    #             NoOptimization,
+    #             ChristofidesOptimization,
+    #             GreedyTSPOptimization,
+    #         ],
+    #     },
+    # }
+
     search_space = {
         "ga": {
-            "mutation_rate": [0.05, 0.1, 0.15, 0.2],
-            "tournament_size": [5, 10, 15, 20],
+            "mutation_rate": [0.2],
+            "tournament_size": [25],
             "stop_condition": [
-                StopCondition(max_generations=20),
-                StopCondition(max_generations=50),
-                StopCondition(max_generations=100),
+                StopCondition(max_generations=100, max_time_seconds=1),
             ],
         },
         "mpi": {
             "mpi_strategy": [MPINoMigration, MPIRingMigration, MPIAllToAllMigration],
             "population": [
                 Population(
-                    size=50, distance_matrix=generate_random_distance_matrix(50)
-                ),
-                Population(
-                    size=50, distance_matrix=generate_random_distance_matrix(100)
-                ),
-                Population(
-                    size=100, distance_matrix=generate_random_distance_matrix(50)
-                ),
-                Population(
-                    size=100, distance_matrix=generate_random_distance_matrix(100)
+                    size=100, distance_matrix=generate_random_distance_matrix(500)
                 ),
             ],
             "strategy_params": [
-                {"migration_size": 10, "migrations_count": 2},
-                {"migration_size": 20, "migrations_count": 4},
-                {"migration_size": 30, "migrations_count": 6},
-                {"migration_size": 40, "migrations_count": 8},
+                {"migration_size": 50, "migrations_count": 10},
+                # {"migration_size": 5, "migrations_count": 8},
+                # {"migration_size": 15, "migrations_count": 2},
+                # {"migration_size": 15, "migrations_count": 8},
             ],
             "comm": [comm],
         },
@@ -192,7 +221,7 @@ def main():
     all_results = grid_search(search_space)
 
     if rank == 0:
-        filename = f"benchmark/results/benchmark_results_{size}_cores.json"
+        filename = f"benchmark/results_time/benchmark_results_{size}_cores.json"
         save_results_to_json(filename, all_results)
 
 
