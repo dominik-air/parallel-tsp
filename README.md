@@ -44,7 +44,7 @@ pytest -m functional
 ### Functional MPI
 
 ```bash
-mpirun -n 4 python -m pytest --with-mpi -m mpi
+mpiexec -n 4 python -m pytest -m mpi
 ```
 
 ## Running benchmark
