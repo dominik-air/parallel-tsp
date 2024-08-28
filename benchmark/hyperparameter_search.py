@@ -22,6 +22,21 @@ from parallel_tsp.runner import GeneticAlgorithmRunner
 from parallel_tsp.stop_condition import StopCondition
 
 
+def split_population(population: Population, num_splits: int) -> List[Population]:
+    """Splits the population into sub-populations."""
+    sub_population_size = len(population.routes) // num_splits
+    return [
+        Population(
+            size=sub_population_size,
+            distance_matrix=population.distance_matrix,
+            routes=population.routes[
+                i * sub_population_size : (i + 1) * sub_population_size
+            ],
+        )
+        for i in range(num_splits)
+    ]
+
+
 def run_benchmark(
     mpi_strategy_class: Any,
     optimization_class: Any,
@@ -149,6 +164,16 @@ def main():
     rank = comm.Get_rank()
     size = comm.Get_size()
 
+    if rank == 0:
+        full_population = Population(
+            size=100, distance_matrix=generate_random_distance_matrix(100)
+        )
+        sub_populations = split_population(full_population, size)
+    else:
+        sub_populations = None
+
+    sub_population = comm.scatter(sub_populations, root=0)
+
     search_space = {
         "ga": {
             "mutation_rate": [0.2],
@@ -160,12 +185,10 @@ def main():
         "mpi": {
             "mpi_strategy": [MPINoMigration, MPIRingMigration, MPIAllToAllMigration],
             "population": [
-                Population(
-                    size=100, distance_matrix=generate_random_distance_matrix(100)
-                ),
+                sub_population,
             ],
             "strategy_params": [
-                {"migration_size": 50, "generations_per_migration": 10},
+                {"migration_size": 5, "generations_per_migration": 10},
             ],
             "comm": [comm],
         },
