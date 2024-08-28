@@ -1,7 +1,15 @@
+import logging
 import time
 from enum import Enum
 
 from mpi4py import MPI
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 
 class StopConditionType(str, Enum):
@@ -53,12 +61,19 @@ class StopCondition:
         self.initial_best_length = None
         self.triggered_condition = None
 
+        logger.info(
+            f"StopCondition initialized with: max_generations={self.max_generations}, "
+            f"improvement_percentage={self.improvement_percentage}, max_time_seconds={self.max_time_seconds}, "
+            f"is_mpi={self.is_mpi}"
+        )
+
     def start_timer(self):
         """Starts the timer for time-based stopping condition.
 
         This method should be called before running the algorithm if a time-based stop condition is used.
         """
         self.start_time = self.timer()
+        logger.info("Timer started for StopCondition.")
 
     def update_initial_best_length(self, length: float) -> None:
         """Updates the initial best route length used for improvement-based stopping.
@@ -67,8 +82,8 @@ class StopCondition:
             length (float): The length of the best route at the start of the algorithm.
         """
         if self.initial_best_length is None:
-            print("Init: ", length)
             self.initial_best_length = length
+            logger.info(f"Initial best route length set to: {length:.2f}")
 
     def should_stop(self, generations_run: int, current_best_length: float) -> bool:
         """Determines whether the genetic algorithm should stop based on the defined stop conditions.
@@ -88,7 +103,9 @@ class StopCondition:
         """
         if self.max_generations is not None and generations_run >= self.max_generations:
             self.triggered_condition = StopConditionType.MAX_GENERATIONS
-            print(self.triggered_condition)
+            logger.info(
+                f"StopCondition triggered: {self.triggered_condition} after {generations_run} generations."
+            )
             return True
 
         if self.improvement_percentage is not None:
@@ -103,7 +120,9 @@ class StopCondition:
             )
             if improvement >= self.improvement_percentage:
                 self.triggered_condition = StopConditionType.IMPROVEMENT_PERCENTAGE
-                print(self.triggered_condition)
+                logger.info(
+                    f"StopCondition triggered: {self.triggered_condition} with improvement of {improvement:.2f}%."
+                )
                 return True
 
         if self.max_time_seconds is not None:
@@ -115,7 +134,9 @@ class StopCondition:
             elapsed_time = self.timer() - self.start_time
             if elapsed_time >= self.max_time_seconds:
                 self.triggered_condition = StopConditionType.MAX_TIME_SECONDS
-                print(self.triggered_condition)
+                logger.info(
+                    f"StopCondition triggered: {self.triggered_condition} after {elapsed_time:.2f} seconds."
+                )
                 return True
 
         return False
