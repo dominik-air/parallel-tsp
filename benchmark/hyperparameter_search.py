@@ -47,10 +47,16 @@ def run_benchmark(
         }
 
         if mpi_strategy_class in {MPIRingMigration, MPIAllToAllMigration}:
-            mpi_strategy_params.update({
-                "migration_size": params["mpi"]["strategy_params"]["migration_size"],
-                "generations_per_migration": params["mpi"]["strategy_params"]["generations_per_migration"],
-            })
+            mpi_strategy_params.update(
+                {
+                    "migration_size": params["mpi"]["strategy_params"][
+                        "migration_size"
+                    ],
+                    "generations_per_migration": params["mpi"]["strategy_params"][
+                        "generations_per_migration"
+                    ],
+                }
+            )
 
         mpi_strategy = mpi_strategy_class(**mpi_strategy_params)
         runner = GeneticAlgorithmRunner(mpi_strategy, optimization_strategy)
@@ -81,7 +87,9 @@ def run_benchmark(
             "population_size": params["mpi"]["population"].size,
             "num_cities": len(params["mpi"]["population"].distance_matrix.matrix),
             "migration_size": params["mpi"]["strategy_params"].get("migration_size"),
-            "generations_per_migration": params["mpi"]["strategy_params"].get("generations_per_migration"),
+            "generations_per_migration": params["mpi"]["strategy_params"].get(
+                "generations_per_migration"
+            ),
             "optimization_strategy": optimization_class.__name__,
             "avg_route_length": avg_route_length,
             "avg_local_opt_time": avg_local_opt_time,
