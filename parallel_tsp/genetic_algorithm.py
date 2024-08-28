@@ -1,9 +1,17 @@
+import logging
 from functools import partial
 from typing import Iterable
 
 from .population import Population
 from .route import Route
 from .stop_condition import StopCondition
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 
 class GeneticAlgorithm:
@@ -46,15 +54,25 @@ class GeneticAlgorithm:
         if self.stop_condition.max_time_seconds is not None:
             self.stop_condition.start_timer()
 
+        logger.info(
+            f"Initialized GeneticAlgorithm with population size {population.size}, "
+            f"mutation rate {mutation_rate}, tournament size {tournament_size}, "
+            f"initial best route length {self.initial_best_route.length()}"
+        )
+
     def run_iteration(self) -> None:
         """Runs a single iteration of the genetic algorithm.
 
         During each iteration, the population evolves by selecting, mutating, and
         recombining routes, and the best route is updated.
         """
+        logger.debug(f"Running iteration {self.generations_run + 1}")
         self.population.evolve(self.mutation_rate, self.tournament_size)
         current_best = select_best(self.population.routes)
         if current_best.length() < self.best_route.length():
+            logger.info(
+                f"New best route found: {current_best.length()} (previous best: {self.best_route.length()})"
+            )
             self.best_route = current_best
         self.generations_run += 1
 
@@ -64,11 +82,17 @@ class GeneticAlgorithm:
         The algorithm continuously evolves the population until the stopping condition
         is satisfied, updating the best route found so far.
         """
+        logger.info("Starting the genetic algorithm run")
         while not self.stop_condition.should_stop(
             generations_run=self.generations_run,
             current_best_length=self.best_route.length(),
         ):
             self.run_iteration()
+
+        logger.info(
+            f"Stopping the genetic algorithm after {self.generations_run} generations. "
+            f"Best route length: {self.best_route.length()}"
+        )
 
 
 def select_best(routes: Iterable[Route]) -> Route:
