@@ -52,6 +52,7 @@ class GeneticAlgorithmRunner:
 
         if rank == 0:
             start_time_local_opt = MPI.Wtime()
+            self.mpi_strategy.genetic_algorithm_partial
             optimized_population = self.local_optimization_strategy.optimize(
                 self.mpi_strategy.population
             )

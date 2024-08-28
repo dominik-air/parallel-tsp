@@ -67,7 +67,7 @@ class MPIRingMigration(MPIStrategy):
 
     Attributes:
         migration_size (int): The number of individuals to migrate between processes.
-        migrations_count (int): The number of migrations to perform.
+        generations_per_migration (int): The number of generations to run before performing a migration.
     """
 
     def __init__(
@@ -75,7 +75,7 @@ class MPIRingMigration(MPIStrategy):
         genetic_algorithm: ParametrisedGeneticAlgorithm,
         population: Population,
         migration_size: int,
-        migrations_count: int,
+        generations_per_migration: int,
     ):
         """Initializes the MPIRingMigration strategy with the given parameters.
 
@@ -83,11 +83,11 @@ class MPIRingMigration(MPIStrategy):
             genetic_algorithm (ParametrisedGeneticAlgorithm): The genetic algorithm to be used in the strategy.
             population (Population): The population to be evolved.
             migration_size (int): The number of individuals to migrate between processes.
-            migrations_count (int): The number of migrations to perform.
+            generations_per_migration (int): The number of generations to run before performing a migration.
         """
         super().__init__(genetic_algorithm, population)
         self.migration_size = migration_size
-        self.migrations_count = migrations_count
+        self.generations_per_migration = generations_per_migration
 
     def run(self, comm: MPI.Comm):
         """Runs the genetic algorithm with ring migration between processes.
@@ -102,8 +102,22 @@ class MPIRingMigration(MPIStrategy):
             Route: The best route found across all processes.
         """
         ga = self.genetic_algorithm_partial(population=self.population)
+        generations_run = 0
 
-        for _ in range(self.migrations_count):
+        while not ga.stop_condition.should_stop(
+            generations_run, ga.best_route.length()
+        ):
+            for _ in range(self.generations_per_migration):
+                if ga.stop_condition.should_stop(
+                    generations_run, ga.best_route.length()
+                ):
+                    break
+                ga.run_iteration()
+                generations_run += 1
+
+            if ga.stop_condition.should_stop(generations_run, ga.best_route.length()):
+                break
+
             comm.Barrier()
 
             next_rank = (comm.Get_rank() + 1) % comm.Get_size()
@@ -128,10 +142,6 @@ class MPIRingMigration(MPIStrategy):
 
             comm.Barrier()
 
-            iterations = ga.stop_condition.max_generations // self.migrations_count
-            for _ in range(iterations):
-                ga.run_iteration()
-
         best_route = ga.best_route
         all_best_routes = comm.gather(best_route, root=0)
 
@@ -145,7 +155,7 @@ class MPIAllToAllMigration(MPIStrategy):
 
     Attributes:
         migration_size (int): The number of individuals to migrate between processes.
-        migrations_count (int): The number of migrations to perform.
+        generations_per_migration (int): The number of generations to run before performing a migration.
     """
 
     def __init__(
@@ -153,7 +163,7 @@ class MPIAllToAllMigration(MPIStrategy):
         genetic_algorithm: ParametrisedGeneticAlgorithm,
         population: Population,
         migration_size: int,
-        migrations_count: int,
+        generations_per_migration: int,
     ):
         """Initializes the MPIAllToAllMigration strategy with the given parameters.
 
@@ -161,11 +171,11 @@ class MPIAllToAllMigration(MPIStrategy):
             genetic_algorithm (ParametrisedGeneticAlgorithm): The genetic algorithm to be used in the strategy.
             population (Population): The population to be evolved.
             migration_size (int): The number of individuals to migrate between processes.
-            migrations_count (int): The number of migrations to perform.
+            generations_per_migration (int): The number of generations to run before performing a migration.
         """
         super().__init__(genetic_algorithm, population)
         self.migration_size = migration_size
-        self.migrations_count = migrations_count
+        self.generations_per_migration = generations_per_migration
 
     def run(self, comm: MPI.Comm):
         """Runs the genetic algorithm with all-to-all migration between processes.
@@ -179,8 +189,22 @@ class MPIAllToAllMigration(MPIStrategy):
             Route: The best route found across all processes.
         """
         ga = self.genetic_algorithm_partial(population=self.population)
+        generations_run = 0
 
-        for _ in range(self.migrations_count):
+        while not ga.stop_condition.should_stop(
+            generations_run, ga.best_route.length()
+        ):
+            for _ in range(self.generations_per_migration):
+                if ga.stop_condition.should_stop(
+                    generations_run, ga.best_route.length()
+                ):
+                    break
+                ga.run_iteration()
+                generations_run += 1
+
+            if ga.stop_condition.should_stop(generations_run, ga.best_route.length()):
+                break
+
             comm.Barrier()
 
             requests = []
@@ -212,10 +236,6 @@ class MPIAllToAllMigration(MPIStrategy):
                 )
 
             comm.Barrier()
-
-            iterations = ga.stop_condition.max_generations // self.migrations_count
-            for _ in range(iterations):
-                ga.run_iteration()
 
         best_route = ga.best_route
         all_best_routes = comm.gather(best_route, root=0)

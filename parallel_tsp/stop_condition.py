@@ -67,6 +67,7 @@ class StopCondition:
             length (float): The length of the best route at the start of the algorithm.
         """
         if self.initial_best_length is None:
+            print("Init: ", length)
             self.initial_best_length = length
 
     def should_stop(self, generations_run: int, current_best_length: float) -> bool:
@@ -87,6 +88,7 @@ class StopCondition:
         """
         if self.max_generations is not None and generations_run >= self.max_generations:
             self.triggered_condition = StopConditionType.MAX_GENERATIONS
+            print(self.triggered_condition)
             return True
 
         if self.improvement_percentage is not None:
@@ -101,6 +103,7 @@ class StopCondition:
             )
             if improvement >= self.improvement_percentage:
                 self.triggered_condition = StopConditionType.IMPROVEMENT_PERCENTAGE
+                print(self.triggered_condition)
                 return True
 
         if self.max_time_seconds is not None:
@@ -112,6 +115,7 @@ class StopCondition:
             elapsed_time = self.timer() - self.start_time
             if elapsed_time >= self.max_time_seconds:
                 self.triggered_condition = StopConditionType.MAX_TIME_SECONDS
+                print(self.triggered_condition)
                 return True
 
         return False

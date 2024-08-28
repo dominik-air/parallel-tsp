@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from mpi4py import MPI
 
+from parallel_tsp.genetic_algorithm import GeneticAlgorithm
 from parallel_tsp.mpi_strategy import MPIStrategy
 from parallel_tsp.optimisation_strategy import OptimizationStrategy
 from parallel_tsp.population import Population
@@ -12,23 +13,21 @@ from parallel_tsp.runner import GeneticAlgorithmRunner
 
 @pytest.fixture
 def comm():
-    """Fixture to provide the MPI communicator."""
     return MPI.COMM_WORLD
 
 
 @pytest.fixture
 def mock_mpi_strategy():
-    """Fixture to provide a mock MPI strategy."""
     mock = MagicMock(spec=MPIStrategy)
     distance_matrix = np.array([[0, 1, 2], [1, 0, 3], [2, 3, 0]])
     mock.population = Population(size=3, distance_matrix=distance_matrix)
     mock.run.return_value = "best_route"
+    mock.genetic_algorithm_partial = MagicMock(spec=GeneticAlgorithm)
     return mock
 
 
 @pytest.fixture
 def mock_optimization_strategy():
-    """Fixture to provide a mock optimization strategy."""
     mock = MagicMock(spec=OptimizationStrategy)
     return mock
 
@@ -74,7 +73,6 @@ def test_genetic_algorithm_runner_run(
 def test_genetic_algorithm_runner_timing(
     mock_wtime, mock_mpi_strategy, mock_optimization_strategy, comm
 ):
-    """Test that timing attributes are correctly calculated and stored."""
     runner = GeneticAlgorithmRunner(mock_mpi_strategy, mock_optimization_strategy)
 
     mock_optimization_strategy.optimize.return_value = mock_mpi_strategy.population

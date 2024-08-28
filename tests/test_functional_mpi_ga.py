@@ -35,7 +35,7 @@ def test_mpi_all_to_all_migration():
         ),
         population=population,
         migration_size=25,
-        migrations_count=5,
+        generations_per_migration=10,
     )
 
     local_optimization_strategy = ChristofidesOptimization()
@@ -74,7 +74,7 @@ def test_mpi_ring_migration():
         ),
         population=population,
         migration_size=25,
-        migrations_count=5,
+        generations_per_migration=10,
     )
 
     local_optimization_strategy = ChristofidesOptimization()
