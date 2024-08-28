@@ -18,7 +18,7 @@ ipykernel = "^6.29.5"
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3.2"
 isort = "^5.13.2"
-black = "^24.8.0"
+black = {extras = ["jupyter"], version = "^24.8.0"}
 coverage = "^7.6.1"
 
 [build-system]

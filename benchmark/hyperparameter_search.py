@@ -133,14 +133,13 @@ def grid_search(search_space: dict[str, dict[str, Any]]) -> dict[str, Any]:
         del param_dict["opt"]["optimization_strategy"]
 
         result = run_benchmark(mpi_class, opt_class, param_dict)
-        
+
         if iteration % 1 == 0:
-            print(f'I am not stuck: {iteration}')
+            print(f"I am not stuck: {iteration}")
         iteration += 1
         all_results.append(result)
 
     return all_results
-
 
 
 def save_results_to_json(file_name: str, data: Any):
