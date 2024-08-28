@@ -1,6 +1,8 @@
 import time
 from enum import Enum
 
+from mpi4py import MPI
+
 
 class StopConditionType(str, Enum):
     """Enum for different types of stopping conditions."""
@@ -13,18 +15,12 @@ class StopConditionType(str, Enum):
 class StopCondition:
     """Defines the stopping conditions for a genetic algorithm run.
 
-    The StopCondition class allows a genetic algorithm to terminate based on one or more criteria:
-    a maximum number of generations, a minimum percentage improvement in the best route length,
-    or a maximum amount of time elapsed.
+    The `StopCondition` class allows a genetic algorithm to terminate based on one or more criteria:
+    - A maximum number of generations.
+    - A minimum percentage improvement in the best route length.
+    - A maximum amount of time elapsed.
 
-    Attributes:
-        max_generations (int | None): The maximum number of generations to run the algorithm.
-        improvement_percentage (float | None): The percentage improvement required to stop the algorithm.
-        max_time_seconds (int | None): The maximum time allowed for the algorithm to run, in seconds.
-        start_time (float | None): The start time of the algorithm, used for time-based stopping.
-        initial_best_length (float | None): The length of the best route at the start of the algorithm,
-            used for improvement-based stopping.
-        triggered_condition (StopConditionType | None): The condition that triggered the stopping of the algorithm.
+    The class supports both MPI-based timing and standard Python timing for time-based stopping conditions.
     """
 
     def __init__(
@@ -32,6 +28,7 @@ class StopCondition:
         max_generations: int | None = None,
         improvement_percentage: float | None = None,
         max_time_seconds: int | None = None,
+        is_mpi: bool = False,
     ):
         """Initializes the StopCondition with the given parameters.
 
@@ -39,13 +36,29 @@ class StopCondition:
             max_generations (int | None): The maximum number of generations to run the algorithm.
             improvement_percentage (float | None): The percentage improvement required to stop the algorithm.
             max_time_seconds (int | None): The maximum time allowed for the algorithm to run, in seconds.
+            is_mpi (bool): Whether to use MPI for timing. If True, MPI's `Wtime` is used for time tracking.
+                           If False, Python's `time.perf_counter` is used.
         """
         self.max_generations = max_generations
         self.improvement_percentage = improvement_percentage
         self.max_time_seconds = max_time_seconds
-        self.start_time = time.perf_counter() if max_time_seconds is not None else None
+        self.is_mpi = is_mpi
+
+        if self.is_mpi:
+            self.timer = MPI.Wtime
+        else:
+            self.timer = time.perf_counter
+
+        self.start_time = None
         self.initial_best_length = None
         self.triggered_condition = None
+
+    def start_timer(self):
+        """Starts the timer for time-based stopping condition.
+
+        This method should be called before running the algorithm if a time-based stop condition is used.
+        """
+        self.start_time = self.timer()
 
     def update_initial_best_length(self, length: float) -> None:
         """Updates the initial best route length used for improvement-based stopping.
@@ -57,9 +70,9 @@ class StopCondition:
             self.initial_best_length = length
 
     def should_stop(self, generations_run: int, current_best_length: float) -> bool:
-        """Determines whether the genetic algorithm should stop.
+        """Determines whether the genetic algorithm should stop based on the defined stop conditions.
 
-        This method checks the current state of the algorithm against the defined stop conditions.
+        This method checks the current state of the algorithm against the stop conditions specified during initialization.
         It will return True if any of the conditions are met.
 
         Args:
@@ -68,6 +81,9 @@ class StopCondition:
 
         Returns:
             bool: True if the algorithm should stop, False otherwise.
+
+        Raises:
+            ValueError: If the timer was not started before running the algorithm and a time-based stop condition is used.
         """
         if self.max_generations is not None and generations_run >= self.max_generations:
             self.triggered_condition = StopConditionType.MAX_GENERATIONS
@@ -88,7 +104,12 @@ class StopCondition:
                 return True
 
         if self.max_time_seconds is not None:
-            elapsed_time = time.perf_counter() - self.start_time
+            if self.start_time is None:
+                raise ValueError(
+                    "Timer was not started. Call 'start_timer()' before running the algorithm."
+                )
+
+            elapsed_time = self.timer() - self.start_time
             if elapsed_time >= self.max_time_seconds:
                 self.triggered_condition = StopConditionType.MAX_TIME_SECONDS
                 return True
@@ -100,6 +121,6 @@ class StopCondition:
 
         Returns:
             StopConditionType | None: The condition that triggered the stopping, such as 'MAX_GENERATIONS',
-            'IMPROVEMENT_PERCENTAGE', or 'MAX_TIME_SECONDS'.
+            'IMPROVEMENT_PERCENTAGE', or 'MAX_TIME_SECONDS'. Returns None if no condition has been triggered.
         """
         return self.triggered_condition
