@@ -1,8 +1,7 @@
 import itertools
 import json
-import time
 from functools import partial
-from typing import Any
+from typing import Any, Dict, List
 
 from mpi4py import MPI
 
@@ -26,82 +25,75 @@ from parallel_tsp.stop_condition import StopCondition
 def run_benchmark(
     mpi_strategy_class: Any,
     optimization_class: Any,
-    params: dict[str, dict[str, Any]],
-    num_runs: int = 3,
-) -> dict[str, Any]:
+    params: Dict[str, Dict[str, Any]],
+    num_runs: int = 1,
+) -> Dict[str, Any]:
     """Run a benchmark with a given set of parameters."""
     results = []
 
-    for _ in range(num_runs):
-        start_time = time.perf_counter()
+    comm = params["mpi"]["comm"]
+    rank = comm.Get_rank()
 
+    for _ in range(num_runs):
         optimization_strategy = optimization_class()
 
-        if mpi_strategy_class in [MPIRingMigration, MPIAllToAllMigration]:
-            mpi_strategy = mpi_strategy_class(
-                genetic_algorithm=partial(
-                    GeneticAlgorithm,
-                    population=params["mpi"]["population"],
-                    **params["ga"],
-                ),
+        mpi_strategy_params = {
+            "genetic_algorithm": partial(
+                GeneticAlgorithm,
                 population=params["mpi"]["population"],
-                migration_size=params["mpi"]["strategy_params"]["migration_size"],
-                migrations_count=params["mpi"]["strategy_params"]["migrations_count"],
-            )
-        else:
-            mpi_strategy = mpi_strategy_class(
-                genetic_algorithm=partial(
-                    GeneticAlgorithm,
-                    population=params["mpi"]["population"],
-                    **params["ga"],
-                ),
-                population=params["mpi"]["population"],
-            )
+                **params["ga"],
+            ),
+            "population": params["mpi"]["population"],
+        }
 
+        if mpi_strategy_class in {MPIRingMigration, MPIAllToAllMigration}:
+            mpi_strategy_params.update({
+                "migration_size": params["mpi"]["strategy_params"]["migration_size"],
+                "generations_per_migration": params["mpi"]["strategy_params"]["generations_per_migration"],
+            })
+
+        mpi_strategy = mpi_strategy_class(**mpi_strategy_params)
         runner = GeneticAlgorithmRunner(mpi_strategy, optimization_strategy)
-        best_route = runner.run(params["mpi"]["comm"])
+        best_route = runner.run(comm)
 
-        end_time = time.perf_counter()
-        elapsed_time = end_time - start_time
+        if rank == 0:
+            route_length = best_route.length() if best_route else float("inf")
 
-        if best_route:
-            route_length = best_route.length()
-        else:
-            route_length = float("inf")
+            results.append(
+                {
+                    "route_length": route_length,
+                    "generations": params["ga"]["stop_condition"].max_generations,
+                    "local_opt_time": runner.local_opt_time,
+                    "mpi_strategy_time": runner.mpi_strategy_time,
+                }
+            )
 
-        results.append(
-            {
-                "time": elapsed_time,
-                "route_length": route_length,
-                "generations": params["ga"]["stop_condition"].max_generations,
-            }
-        )
+    if rank == 0:
+        avg_route_length = sum(r["route_length"] for r in results) / num_runs
+        avg_local_opt_time = sum(r["local_opt_time"] for r in results) / num_runs
+        avg_mpi_strategy_time = sum(r["mpi_strategy_time"] for r in results) / num_runs
 
-    avg_time = sum(r["time"] for r in results) / num_runs
-    avg_route_length = sum(r["route_length"] for r in results) / num_runs
+        benchmark_result = {
+            "mutation_rate": params["ga"]["mutation_rate"],
+            "tournament_size": params["ga"]["tournament_size"],
+            "max_generations": params["ga"]["stop_condition"].max_generations,
+            "mpi_strategy": mpi_strategy_class.__name__,
+            "population_size": params["mpi"]["population"].size,
+            "num_cities": len(params["mpi"]["population"].distance_matrix.matrix),
+            "migration_size": params["mpi"]["strategy_params"].get("migration_size"),
+            "generations_per_migration": params["mpi"]["strategy_params"].get("generations_per_migration"),
+            "optimization_strategy": optimization_class.__name__,
+            "avg_route_length": avg_route_length,
+            "avg_local_opt_time": avg_local_opt_time,
+            "avg_mpi_strategy_time": avg_mpi_strategy_time,
+        }
 
-    benchmark_result = {
-        "mutation_rate": params["ga"]["mutation_rate"],
-        "tournament_size": params["ga"]["tournament_size"],
-        "max_generations": params["ga"]["stop_condition"].max_generations,
-        "mpi_strategy": mpi_strategy_class.__name__,
-        "population_size": params["mpi"]["population"].size,
-        "num_cities": len(params["mpi"]["population"].distance_matrix.matrix),
-        "migration_size": params["mpi"]["strategy_params"].get("migration_size", None),
-        "migrations_count": params["mpi"]["strategy_params"].get(
-            "migrations_count", None
-        ),
-        "optimization_strategy": optimization_class.__name__,
-        "avg_time": avg_time,
-        "avg_route_length": avg_route_length,
-    }
-
-    return benchmark_result
+        return benchmark_result
+    return None
 
 
-def grid_search(search_space: dict[str, dict[str, Any]]) -> dict[str, Any]:
+def grid_search(search_space: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
     """Perform a grid search over the parameter space."""
-    # Add mpi_strategy and optimization_strategy to the combinations
     param_combinations = list(
         itertools.product(
             *[
@@ -117,7 +109,6 @@ def grid_search(search_space: dict[str, dict[str, Any]]) -> dict[str, Any]:
     )
 
     all_results = []
-    iteration = 0
 
     for param_set in param_combinations:
         param_dict = {}
@@ -129,15 +120,12 @@ def grid_search(search_space: dict[str, dict[str, Any]]) -> dict[str, Any]:
         mpi_class = param_dict["mpi"]["mpi_strategy"]
         opt_class = param_dict["opt"]["optimization_strategy"]
 
-        del param_dict["mpi"]["mpi_strategy"]
-        del param_dict["opt"]["optimization_strategy"]
+        param_dict["mpi"].pop("mpi_strategy")
+        param_dict["opt"].pop("optimization_strategy")
 
         result = run_benchmark(mpi_class, opt_class, param_dict)
-
-        if iteration % 1 == 0:
-            print(f"I am not stuck: {iteration}")
-        iteration += 1
-        all_results.append(result)
+        if result:
+            all_results.append(result)
 
     return all_results
 
@@ -153,66 +141,29 @@ def main():
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    # search_space = {
-    #     "ga": {
-    #         "mutation_rate": [0.05, 0.1, 0.2],
-    #         "tournament_size": [5, 10, 15],
-    #         "stop_condition": [
-    #             StopCondition(max_generations=40),
-    #         ],
-    #     },
-    #     "mpi": {
-    #         "mpi_strategy": [MPINoMigration, MPIRingMigration, MPIAllToAllMigration],
-    #         "population": [
-    #             Population(
-    #                 size=30, distance_matrix=generate_random_distance_matrix(50)
-    #             ),
-    #         ],
-    #         "strategy_params": [
-    #             {"migration_size": 5, "migrations_count": 2},
-    #             {"migration_size": 5, "migrations_count": 8},
-    #             {"migration_size": 15, "migrations_count": 2},
-    #             {"migration_size": 15, "migrations_count": 8},
-    #         ],
-    #         "comm": [comm],
-    #     },
-    #     "opt": {
-    #         "optimization_strategy": [
-    #             NoOptimization,
-    #             ChristofidesOptimization,
-    #             GreedyTSPOptimization,
-    #         ],
-    #     },
-    # }
-
     search_space = {
         "ga": {
             "mutation_rate": [0.2],
             "tournament_size": [25],
             "stop_condition": [
-                StopCondition(max_generations=100, max_time_seconds=1),
+                StopCondition(max_generations=100, improvement_percentage=50),
             ],
         },
         "mpi": {
             "mpi_strategy": [MPINoMigration, MPIRingMigration, MPIAllToAllMigration],
             "population": [
                 Population(
-                    size=100, distance_matrix=generate_random_distance_matrix(500)
+                    size=100, distance_matrix=generate_random_distance_matrix(100)
                 ),
             ],
             "strategy_params": [
-                {"migration_size": 50, "migrations_count": 10},
-                # {"migration_size": 5, "migrations_count": 8},
-                # {"migration_size": 15, "migrations_count": 2},
-                # {"migration_size": 15, "migrations_count": 8},
+                {"migration_size": 50, "generations_per_migration": 10},
             ],
             "comm": [comm],
         },
         "opt": {
             "optimization_strategy": [
                 NoOptimization,
-                ChristofidesOptimization,
-                GreedyTSPOptimization,
             ],
         },
     }
