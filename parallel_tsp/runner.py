@@ -1,7 +1,16 @@
+import logging
+
 from mpi4py import MPI
 
 from .mpi_strategy import MPIStrategy
 from .optimisation_strategy import OptimizationStrategy
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 
 class GeneticAlgorithmRunner:
@@ -52,12 +61,14 @@ class GeneticAlgorithmRunner:
 
         if rank == 0:
             start_time_local_opt = MPI.Wtime()
-            self.mpi_strategy.genetic_algorithm_partial
             optimized_population = self.local_optimization_strategy.optimize(
                 self.mpi_strategy.population
             )
             end_time_local_opt = MPI.Wtime()
             self.local_opt_time = end_time_local_opt - start_time_local_opt
+            logger.info(
+                f"Local optimization time on rank 0: {self.local_opt_time:.4f} seconds"
+            )
         else:
             optimized_population = None
 
@@ -70,6 +81,9 @@ class GeneticAlgorithmRunner:
         best_route = self.mpi_strategy.run(comm)
         end_time_mpi_strategy = MPI.Wtime()
         self.mpi_strategy_time = end_time_mpi_strategy - start_time_mpi_strategy
+        logger.info(
+            f"MPI strategy execution time on rank {rank}: {self.mpi_strategy_time:.4f} seconds"
+        )
 
         all_local_opt_times = comm.gather(self.local_opt_time, root=0)
         all_mpi_strategy_times = comm.gather(self.mpi_strategy_time, root=0)
@@ -82,5 +96,12 @@ class GeneticAlgorithmRunner:
 
             self.local_opt_time = avg_local_opt_time
             self.mpi_strategy_time = avg_mpi_strategy_time
+
+            logger.info(
+                f"Average local optimization time: {avg_local_opt_time:.4f} seconds"
+            )
+            logger.info(
+                f"Average MPI strategy time: {avg_mpi_strategy_time:.4f} seconds"
+            )
 
         return best_route
