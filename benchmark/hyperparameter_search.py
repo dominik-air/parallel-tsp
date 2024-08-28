@@ -99,7 +99,7 @@ def run_benchmark(
             "tournament_size": params["ga"]["tournament_size"],
             "max_generations": params["ga"]["stop_condition"].max_generations,
             "mpi_strategy": mpi_strategy_class.__name__,
-            "population_size": params["mpi"]["population"].size,
+            "population_size": params["mpi"]["population_size"],
             "num_cities": len(params["mpi"]["population"].distance_matrix.matrix),
             "migration_size": params["mpi"]["strategy_params"].get("migration_size"),
             "generations_per_migration": params["mpi"]["strategy_params"].get(
@@ -164,42 +164,58 @@ def main():
     rank = comm.Get_rank()
     size = comm.Get_size()
 
-    if rank == 0:
-        full_population = Population(
-            size=100, distance_matrix=generate_random_distance_matrix(100)
-        )
-        sub_populations = split_population(full_population, size)
-    else:
-        sub_populations = None
+    population_sizes = [100, 200, 400]
 
-    sub_population = comm.scatter(sub_populations, root=0)
+    all_results = []
+    for pop_size in population_sizes:
+        if rank == 0:
+            full_population = Population(
+                size=pop_size, distance_matrix=generate_random_distance_matrix(200)
+            )
+            sub_populations = split_population(full_population, size)
+        else:
+            sub_populations = None
 
-    search_space = {
-        "ga": {
-            "mutation_rate": [0.2],
-            "tournament_size": [25],
-            "stop_condition": [
-                StopCondition(max_generations=100, improvement_percentage=50),
-            ],
-        },
-        "mpi": {
-            "mpi_strategy": [MPINoMigration, MPIRingMigration, MPIAllToAllMigration],
-            "population": [
-                sub_population,
-            ],
-            "strategy_params": [
-                {"migration_size": 5, "generations_per_migration": 10},
-            ],
-            "comm": [comm],
-        },
-        "opt": {
-            "optimization_strategy": [
-                NoOptimization,
-            ],
-        },
-    }
+        sub_population = comm.scatter(sub_populations, root=0)
 
-    all_results = grid_search(search_space)
+        search_space = {
+            "ga": {
+                "mutation_rate": [0.2],
+                "tournament_size": [int(sub_population.size / 5)],
+                "stop_condition": [
+                    StopCondition(max_generations=500, improvement_percentage=50),
+                ],
+            },
+            "mpi": {
+                "mpi_strategy": [
+                    MPINoMigration,
+                    MPIRingMigration,
+                    MPIAllToAllMigration,
+                ],
+                "population": [
+                    sub_population,
+                ],
+                "population_size": [pop_size],
+                "strategy_params": [
+                    {"migration_size": 5, "generations_per_migration": 10},
+                    {"migration_size": 10, "generations_per_migration": 10},
+                    {"migration_size": 5, "generations_per_migration": 5},
+                    {"migration_size": 10, "generations_per_migration": 5},
+                    {"migration_size": 5, "generations_per_migration": 2},
+                    {"migration_size": 10, "generations_per_migration": 2},
+                ],
+                "comm": [comm],
+            },
+            "opt": {
+                "optimization_strategy": [
+                    NoOptimization,
+                ],
+            },
+        }
+
+        results = grid_search(search_space)
+        if rank == 0:
+            all_results.extend(results)
 
     if rank == 0:
         filename = f"benchmark/results_time/benchmark_results_{size}_cores.json"
