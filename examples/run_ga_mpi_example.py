@@ -22,7 +22,7 @@ def main():
     population = Population(size=100, distance_matrix=distance_matrix)
 
     stop_condition = StopCondition(
-        max_generations=100, improvement_percentage=50, max_time_seconds=10
+        max_generations=100, improvement_percentage=50, max_time_seconds=1
     )
 
     mpi_strategy = MPIAllToAllMigration(
@@ -31,7 +31,7 @@ def main():
         ),
         population=population,
         migration_size=25,
-        migrations_count=5,
+        generations_per_migration=5,
     )
 
     local_optimization_strategy = ChristofidesOptimization()
