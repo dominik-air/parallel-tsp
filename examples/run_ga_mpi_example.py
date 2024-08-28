@@ -21,9 +21,7 @@ def main():
     distance_matrix = generate_random_distance_matrix(100)
     population = Population(size=100, distance_matrix=distance_matrix)
 
-    stop_condition = StopCondition(
-        max_generations=100, improvement_percentage=50, max_time_seconds=1
-    )
+    stop_condition = StopCondition(max_generations=100, improvement_percentage=50)
 
     mpi_strategy = MPIAllToAllMigration(
         genetic_algorithm=parametrise_genetic_algorithm(
@@ -42,10 +40,7 @@ def main():
         initial_best_length = select_best(population.routes).length()
         stop_condition.update_initial_best_length(initial_best_length)
 
-    best_route = runner.run(comm)
-
-    if rank == 0:
-        final_best_length = best_route.length()
+    runner.run(comm)
 
 
 if __name__ == "__main__":

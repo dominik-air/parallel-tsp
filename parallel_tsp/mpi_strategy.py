@@ -82,6 +82,7 @@ class MPIRingMigration(MPIStrategy):
     Attributes:
         migration_size (int): The number of individuals to migrate between processes.
         generations_per_migration (int): The number of generations to run before performing a migration.
+        stop_migration (bool): Flag to indicate when migrations should stop.
     """
 
     def __init__(
@@ -102,6 +103,7 @@ class MPIRingMigration(MPIStrategy):
         super().__init__(genetic_algorithm, population)
         self.migration_size = migration_size
         self.generations_per_migration = generations_per_migration
+        self.stop_migration = False
         logger.info(
             f"{self.__class__.__name__} initialized with migration size {migration_size} and generations per migration {generations_per_migration}"
         )
@@ -138,32 +140,41 @@ class MPIRingMigration(MPIStrategy):
 
             if ga.stop_condition.should_stop(generations_run, ga.best_route.length()):
                 logger.info(f"Rank {rank} stopping due to stop condition")
+                self.stop_migration = True
+
+            stop_migration_global = comm.allreduce(self.stop_migration, op=MPI.LOR)
+
+            if stop_migration_global:
+                logger.info(f"Rank {rank} stopping migration due to global flag")
                 break
 
             comm.Barrier()
 
-            next_rank = (comm.Get_rank() + 1) % comm.Get_size()
-            prev_rank = (comm.Get_rank() - 1 + comm.Get_size()) % comm.Get_size()
+            if not stop_migration_global:
+                next_rank = (comm.Get_rank() + 1) % comm.Get_size()
+                prev_rank = (comm.Get_rank() - 1 + comm.Get_size()) % comm.Get_size()
 
-            subset_population = self.population.get_subset(self.migration_size)
-            serialized_population = subset_population.serialize()
+                subset_population = self.population.get_subset(self.migration_size)
+                serialized_population = subset_population.serialize()
 
-            send_request = comm.Isend(
-                [serialized_population, MPI.DOUBLE], dest=next_rank
-            )
-            received_data = np.empty_like(serialized_population)
-            recv_request = comm.Irecv([received_data, MPI.DOUBLE], source=prev_rank)
+                send_request = comm.Isend(
+                    [serialized_population, MPI.DOUBLE], dest=next_rank
+                )
+                received_data = np.empty_like(serialized_population)
+                recv_request = comm.Irecv([received_data, MPI.DOUBLE], source=prev_rank)
 
-            MPI.Request.Waitall([send_request, recv_request])
+                MPI.Request.Waitall([send_request, recv_request])
 
-            received_population = Population.deserialize(
-                received_data, self.population.distance_matrix
-            )
+                received_population = Population.deserialize(
+                    received_data, self.population.distance_matrix
+                )
 
-            self.population = combine_populations(self.population, received_population)
-            logger.info(
-                f"Rank {rank} performed migration to rank {next_rank} and received from rank {prev_rank}"
-            )
+                self.population = combine_populations(
+                    self.population, received_population
+                )
+                logger.info(
+                    f"Rank {rank} performed migration to rank {next_rank} and received from rank {prev_rank}"
+                )
 
             comm.Barrier()
 
@@ -184,6 +195,7 @@ class MPIAllToAllMigration(MPIStrategy):
     Attributes:
         migration_size (int): The number of individuals to migrate between processes.
         generations_per_migration (int): The number of generations to run before performing a migration.
+        stop_migration (bool): Flag to indicate when migrations should stop.
     """
 
     def __init__(
@@ -204,6 +216,7 @@ class MPIAllToAllMigration(MPIStrategy):
         super().__init__(genetic_algorithm, population)
         self.migration_size = migration_size
         self.generations_per_migration = generations_per_migration
+        self.stop_migration = False
         logger.info(
             f"{self.__class__.__name__} initialized with migration size {migration_size} and generations per migration {generations_per_migration}"
         )
@@ -239,40 +252,49 @@ class MPIAllToAllMigration(MPIStrategy):
 
             if ga.stop_condition.should_stop(generations_run, ga.best_route.length()):
                 logger.info(f"Rank {rank} stopping due to stop condition")
+                self.stop_migration = True
+
+            stop_migration_global = comm.allreduce(self.stop_migration, op=MPI.LOR)
+
+            if stop_migration_global:
+                logger.info(f"Rank {rank} stopping migration due to global flag")
                 break
 
             comm.Barrier()
 
-            requests = []
+            if not stop_migration_global:
+                requests = []
 
-            for other_rank in range(comm.Get_size()):
-                if other_rank != comm.Get_rank():
-                    subset_population = self.population.get_subset(self.migration_size)
-                    serialized_population = subset_population.serialize()
+                for other_rank in range(comm.Get_size()):
+                    if other_rank != comm.Get_rank():
+                        subset_population = self.population.get_subset(
+                            self.migration_size
+                        )
+                        serialized_population = subset_population.serialize()
 
-                    send_request = comm.Isend(
-                        [serialized_population, MPI.DOUBLE], dest=other_rank
+                        send_request = comm.Isend(
+                            [serialized_population, MPI.DOUBLE], dest=other_rank
+                        )
+                        received_data = np.empty_like(serialized_population)
+                        recv_request = comm.Irecv(
+                            [received_data, MPI.DOUBLE], source=other_rank
+                        )
+
+                        requests.append((send_request, recv_request, received_data))
+
+                for send_request, recv_request, received_data in requests:
+                    MPI.Request.Waitall([send_request, recv_request])
+
+                    received_population = Population.deserialize(
+                        received_data, self.population.distance_matrix
                     )
-                    received_data = np.empty_like(serialized_population)
-                    recv_request = comm.Irecv(
-                        [received_data, MPI.DOUBLE], source=other_rank
+
+                    self.population = combine_populations(
+                        self.population, received_population
                     )
-
-                    requests.append((send_request, recv_request, received_data))
-
-            for send_request, recv_request, received_data in requests:
-                MPI.Request.Waitall([send_request, recv_request])
-
-                received_population = Population.deserialize(
-                    received_data, self.population.distance_matrix
-                )
-
-                self.population = combine_populations(
-                    self.population, received_population
-                )
-                logger.info(
-                    f"Rank {rank} performed all-to-all migration with rank {other_rank}"
-                )
+                    logger.info(
+                        f"Rank {rank} performed all-to-all migration with rank {other_rank}"
+                    )
 
             comm.Barrier()
 

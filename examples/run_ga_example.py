@@ -33,7 +33,6 @@ def main():
     ga = ga_parameters(population=combined_population)
 
     ga.run()
-    stop_condition = ga.stop_condition.get_triggered_condition()
 
 
 if __name__ == "__main__":
