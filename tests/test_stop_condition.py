@@ -1,7 +1,4 @@
-import time
-
 import pytest
-from mpi4py import MPI
 
 from parallel_tsp.stop_condition import StopCondition, StopConditionType
 

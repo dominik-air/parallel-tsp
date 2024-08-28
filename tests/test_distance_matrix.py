@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from parallel_tsp.distance_matrix import DistanceMatrix, generate_random_distance_matrix
 
