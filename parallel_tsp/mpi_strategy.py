@@ -1,3 +1,4 @@
+import logging
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -5,6 +6,13 @@ from mpi4py import MPI
 
 from .genetic_algorithm import ParametrisedGeneticAlgorithm
 from .population import Population, combine_populations
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 
 class MPIStrategy(ABC):
@@ -26,6 +34,9 @@ class MPIStrategy(ABC):
         """
         self.genetic_algorithm_partial = genetic_algorithm
         self.population = population
+        logger.info(
+            f"Initialized {self.__class__.__name__} with population size {population.size}"
+        )
 
     @abstractmethod
     def run(self, comm: MPI.Comm):
@@ -50,15 +61,18 @@ class MPINoMigration(MPIStrategy):
             Route: The best route found across all processes.
         """
         rank = comm.Get_rank()
+        logger.info(f"Rank {rank} starting genetic algorithm without migration")
 
         ga = self.genetic_algorithm_partial(population=self.population)
-
         ga.run()
         best_route = ga.best_route
         all_best_routes = comm.gather(best_route, root=0)
 
         if rank == 0:
             best_route_overall = min(all_best_routes, key=lambda route: route.length())
+            logger.info(
+                "Best route found after running the algorithm without migration"
+            )
             return best_route_overall
 
 
@@ -88,6 +102,9 @@ class MPIRingMigration(MPIStrategy):
         super().__init__(genetic_algorithm, population)
         self.migration_size = migration_size
         self.generations_per_migration = generations_per_migration
+        logger.info(
+            f"{self.__class__.__name__} initialized with migration size {migration_size} and generations per migration {generations_per_migration}"
+        )
 
     def run(self, comm: MPI.Comm):
         """Runs the genetic algorithm with ring migration between processes.
@@ -101,8 +118,11 @@ class MPIRingMigration(MPIStrategy):
         Returns:
             Route: The best route found across all processes.
         """
+        rank = comm.Get_rank()
         ga = self.genetic_algorithm_partial(population=self.population)
         generations_run = 0
+
+        logger.info(f"Rank {rank} starting genetic algorithm with ring migration")
 
         while not ga.stop_condition.should_stop(
             generations_run, ga.best_route.length()
@@ -114,8 +134,10 @@ class MPIRingMigration(MPIStrategy):
                     break
                 ga.run_iteration()
                 generations_run += 1
+                logger.debug(f"Rank {rank} completed generation {generations_run}")
 
             if ga.stop_condition.should_stop(generations_run, ga.best_route.length()):
+                logger.info(f"Rank {rank} stopping due to stop condition")
                 break
 
             comm.Barrier()
@@ -139,14 +161,20 @@ class MPIRingMigration(MPIStrategy):
             )
 
             self.population = combine_populations(self.population, received_population)
+            logger.info(
+                f"Rank {rank} performed migration to rank {next_rank} and received from rank {prev_rank}"
+            )
 
             comm.Barrier()
 
         best_route = ga.best_route
         all_best_routes = comm.gather(best_route, root=0)
 
-        if comm.Get_rank() == 0:
+        if rank == 0:
             best_route_overall = min(all_best_routes, key=lambda route: route.length())
+            logger.info(
+                "Best route found after running the algorithm with ring migration"
+            )
             return best_route_overall
 
 
@@ -176,6 +204,9 @@ class MPIAllToAllMigration(MPIStrategy):
         super().__init__(genetic_algorithm, population)
         self.migration_size = migration_size
         self.generations_per_migration = generations_per_migration
+        logger.info(
+            f"{self.__class__.__name__} initialized with migration size {migration_size} and generations per migration {generations_per_migration}"
+        )
 
     def run(self, comm: MPI.Comm):
         """Runs the genetic algorithm with all-to-all migration between processes.
@@ -188,8 +219,11 @@ class MPIAllToAllMigration(MPIStrategy):
         Returns:
             Route: The best route found across all processes.
         """
+        rank = comm.Get_rank()
         ga = self.genetic_algorithm_partial(population=self.population)
         generations_run = 0
+
+        logger.info(f"Rank {rank} starting genetic algorithm with all-to-all migration")
 
         while not ga.stop_condition.should_stop(
             generations_run, ga.best_route.length()
@@ -201,8 +235,10 @@ class MPIAllToAllMigration(MPIStrategy):
                     break
                 ga.run_iteration()
                 generations_run += 1
+                logger.debug(f"Rank {rank} completed generation {generations_run}")
 
             if ga.stop_condition.should_stop(generations_run, ga.best_route.length()):
+                logger.info(f"Rank {rank} stopping due to stop condition")
                 break
 
             comm.Barrier()
@@ -234,12 +270,18 @@ class MPIAllToAllMigration(MPIStrategy):
                 self.population = combine_populations(
                     self.population, received_population
                 )
+                logger.info(
+                    f"Rank {rank} performed all-to-all migration with rank {other_rank}"
+                )
 
             comm.Barrier()
 
         best_route = ga.best_route
         all_best_routes = comm.gather(best_route, root=0)
 
-        if comm.Get_rank() == 0:
+        if rank == 0:
             best_route_overall = min(all_best_routes, key=lambda route: route.length())
+            logger.info(
+                "Best route found after running the algorithm with all-to-all migration"
+            )
             return best_route_overall
