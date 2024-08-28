@@ -116,7 +116,3 @@ def test_mixed_optimization(monkeypatch, population):
     for route in optimized_population.routes[num_non_optimized:]:
         assert route.city_indices in [r.city_indices for r in population.routes]
         assert len(route.city_indices) == 4
-
-
-if __name__ == "__main__":
-    pytest.main()

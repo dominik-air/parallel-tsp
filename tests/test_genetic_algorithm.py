@@ -103,7 +103,3 @@ def test_parametrise_genetic_algorithm_invalid_inputs():
             tournament_size=-1,
             stop_condition=StopCondition(max_generations=10),
         )
-
-
-if __name__ == "__main__":
-    pytest.main()

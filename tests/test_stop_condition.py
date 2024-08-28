@@ -111,7 +111,3 @@ def test_error_without_initial_best_length():
 
     with pytest.raises(ValueError):
         stop_condition.should_stop(generations_run=5, current_best_length=90.0)
-
-
-if __name__ == "__main__":
-    pytest.main()

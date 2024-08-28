@@ -90,7 +90,3 @@ def test_get_subset(population):
     assert isinstance(subset_population, Population)
     assert len(subset_population.routes) == subset_size
     assert all(route in population.routes for route in subset_population.routes)
-
-
-if __name__ == "__main__":
-    pytest.main()

@@ -36,7 +36,3 @@ def test_random_distance_matrix_initialization():
     assert distance_matrix.matrix.shape == (num_cities, num_cities)
     assert np.all(distance_matrix.matrix >= 0)
     assert np.all(distance_matrix.matrix <= 1)
-
-
-if __name__ == "__main__":
-    pytest.main()
