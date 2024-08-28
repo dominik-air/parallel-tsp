@@ -79,7 +79,7 @@ class GeneticAlgorithmRunner:
             )
             avg_mpi_strategy_time = sum(all_mpi_strategy_times) / comm.Get_size()
 
-            print(f"Average Local Optimization Time: {avg_local_opt_time:.4f} seconds")
-            print(f"Average MPI Strategy Time: {avg_mpi_strategy_time:.4f} seconds")
+            self.local_opt_time = avg_local_opt_time
+            self.mpi_strategy_time = avg_mpi_strategy_time
 
         return best_route
