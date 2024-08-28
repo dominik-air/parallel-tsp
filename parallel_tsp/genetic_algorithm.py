@@ -43,6 +43,9 @@ class GeneticAlgorithm:
         self.stop_condition = stop_condition
         self.stop_condition.update_initial_best_length(self.initial_best_route.length())
 
+        if self.stop_condition.max_time_seconds is not None:
+            self.stop_condition.start_timer()
+
     def run_iteration(self) -> None:
         """Runs a single iteration of the genetic algorithm.
 
