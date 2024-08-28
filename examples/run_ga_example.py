@@ -32,13 +32,8 @@ def main():
 
     ga = ga_parameters(population=combined_population)
 
-    print(f"Initial best route length: {round(ga.initial_best_route.length(), 2)}")
-
     ga.run()
     stop_condition = ga.stop_condition.get_triggered_condition()
-    print(f"Algorithm stopped due to: {stop_condition}")
-
-    print(f"Best route length: {round(ga.best_route.length(), 2)}")
 
 
 if __name__ == "__main__":

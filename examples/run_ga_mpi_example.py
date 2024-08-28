@@ -41,13 +41,11 @@ def main():
     if rank == 0:
         initial_best_length = select_best(population.routes).length()
         stop_condition.update_initial_best_length(initial_best_length)
-        print(f"Initial best route length: {round(initial_best_length, 2)}")
 
     best_route = runner.run(comm)
 
     if rank == 0:
         final_best_length = best_route.length()
-        print(f"Best route length: {round(final_best_length, 2)}")
 
 
 if __name__ == "__main__":

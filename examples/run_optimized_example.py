@@ -24,16 +24,8 @@ def main():
         max_generations=100, improvement_percentage=50, max_time_seconds=10
     )
 
-    print(
-        f"Initial best route length: {round(select_best(initial_population.routes).length(), 2)}"
-    )
-
     optimization_strategy = ChristofidesOptimization()
     optimized_population = optimization_strategy.optimize(initial_population)
-
-    print(
-        f"Best route length after local optimisation: {round(select_best(optimized_population.routes).length(), 2)}"
-    )
 
     ga_parameters = parametrise_genetic_algorithm(
         mutation_rate=0.05, tournament_size=10, stop_condition=stop_condition
@@ -41,9 +33,6 @@ def main():
 
     ga = ga_parameters(population=optimized_population)
     ga.run()
-
-    best_route = ga.best_route
-    print(f"Best route length: {round(best_route.length(), 2)}")
 
 
 if __name__ == "__main__":
