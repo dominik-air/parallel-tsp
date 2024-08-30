@@ -183,7 +183,7 @@ def main():
                 "mutation_rate": [0.2],
                 "tournament_size": [int(sub_population.size / 5)],
                 "stop_condition": [
-                    StopCondition(max_generations=500, improvement_percentage=50),
+                    StopCondition(max_generations=1000, max_time_seconds=20),
                 ],
             },
             "mpi": {
@@ -197,18 +197,26 @@ def main():
                 ],
                 "population_size": [pop_size],
                 "strategy_params": [
-                    {"migration_size": 5, "generations_per_migration": 10},
-                    {"migration_size": 10, "generations_per_migration": 10},
-                    {"migration_size": 5, "generations_per_migration": 5},
-                    {"migration_size": 10, "generations_per_migration": 5},
-                    {"migration_size": 5, "generations_per_migration": 2},
-                    {"migration_size": 10, "generations_per_migration": 2},
+                    {
+                        "migration_size": int(sub_population.size / 5),
+                        "generations_per_migration": 2,
+                    },
+                    {
+                        "migration_size": int(sub_population.size / 5),
+                        "generations_per_migration": 5,
+                    },
+                    {
+                        "migration_size": int(sub_population.size / 5),
+                        "generations_per_migration": 10,
+                    },
                 ],
                 "comm": [comm],
             },
             "opt": {
                 "optimization_strategy": [
                     NoOptimization,
+                    ChristofidesOptimization,
+                    GreedyTSPOptimization,
                 ],
             },
         }
@@ -218,7 +226,7 @@ def main():
             all_results.extend(results)
 
     if rank == 0:
-        filename = f"benchmark/results_time/benchmark_results_{size}_cores.json"
+        filename = f"benchmark/results_perf/benchmark_results_{size}_cores.json"
         save_results_to_json(filename, all_results)
 
 
