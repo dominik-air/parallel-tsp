@@ -1,10 +1,5 @@
 # parallel-tsp
 
-## Inspirations and references
-
-### [Travelling Salesman Problem: Parallel Implementations & Analysis](https://arxiv.org/pdf/2205.14352.pdf)
-The project implements several approaches to parallelize the Brute Force TSP algorithm, including OpenMP, MPI and CUDA programming.
-
 ## Project dependencies
 
 ### Python
@@ -54,3 +49,10 @@ The `8` is an arbitrary value and you can use as many parallel environments as m
 ```bash
 for cores in {1..8}; do echo "Running with $cores cores"; time mpiexec -n $cores python benchmark/hyperparameter_search.py; done
 ```
+
+## Inspirations and references
+
+### [Travelling Salesman Problem: Parallel Implementations & Analysis](https://arxiv.org/pdf/2205.14352.pdf)
+
+### [Optimal Low-Latency Network Topologies for Cluster Performance Enhancement](https://arxiv.org/pdf/1904.00513)
+
