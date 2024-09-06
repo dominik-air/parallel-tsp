@@ -28,6 +28,7 @@ def test_stop_condition_improvement_percentage():
     )
 
 
+@pytest.mark.unit
 def test_stop_condition_max_time_seconds_non_mpi(monkeypatch):
     stop_condition = StopCondition(max_time_seconds=2, is_mpi=False)
     stop_condition.start_timer()
@@ -44,6 +45,7 @@ def test_stop_condition_max_time_seconds_non_mpi(monkeypatch):
     )
 
 
+@pytest.mark.unit
 def test_stop_condition_max_time_seconds_mpi(monkeypatch):
     stop_condition = StopCondition(max_time_seconds=2, is_mpi=True)
     stop_condition.start_timer()
@@ -60,6 +62,7 @@ def test_stop_condition_max_time_seconds_mpi(monkeypatch):
     )
 
 
+@pytest.mark.unit
 def test_stop_condition_combined():
     stop_condition = StopCondition(
         max_generations=10, improvement_percentage=20.0, max_time_seconds=2
@@ -81,6 +84,7 @@ def test_stop_condition_combined():
     )
 
 
+@pytest.mark.unit
 def test_stop_condition_no_conditions_met():
     stop_condition = StopCondition(
         max_generations=10, improvement_percentage=10.0, max_time_seconds=5
@@ -93,6 +97,7 @@ def test_stop_condition_no_conditions_met():
     assert stop_condition.get_triggered_condition() is None
 
 
+@pytest.mark.unit
 def test_update_initial_best_length():
     stop_condition = StopCondition(improvement_percentage=10.0)
     stop_condition.update_initial_best_length(100.0)
@@ -103,6 +108,7 @@ def test_update_initial_best_length():
     assert stop_condition.initial_best_length == 100.0
 
 
+@pytest.mark.unit
 def test_error_without_initial_best_length():
     stop_condition = StopCondition(improvement_percentage=10.0)
 

@@ -23,17 +23,20 @@ def population(distance_matrix):
     return Population(size=5, distance_matrix=distance_matrix)
 
 
+@pytest.mark.unit
 def test_population_initialization(population):
     assert len(population.routes) == 5
     assert all(isinstance(route, Route) for route in population.routes)
 
 
+@pytest.mark.unit
 def test_random_route_generation(population):
     route = population.random_route(num_cities=4)
     assert len(route) == 4
     assert set(route) == {0, 1, 2, 3}
 
 
+@pytest.mark.unit
 def test_evolution_changes_population(population, monkeypatch):
     monkeypatch.setattr(random, "random", lambda: 0.01)
     monkeypatch.setattr(random, "sample", lambda x, k: x[:k])
@@ -45,6 +48,7 @@ def test_evolution_changes_population(population, monkeypatch):
     assert initial_routes != evolved_routes
 
 
+@pytest.mark.unit
 def test_select_parent(population, monkeypatch):
     monkeypatch.setattr(random, "sample", lambda x, k: x[:k])
 
@@ -52,6 +56,7 @@ def test_select_parent(population, monkeypatch):
     assert selected_parent in population.routes
 
 
+@pytest.mark.unit
 def test_generate_populations(distance_matrix):
     populations = generate_populations(
         num_populations=3, population_size=5, distance_matrix=distance_matrix
@@ -60,6 +65,7 @@ def test_generate_populations(distance_matrix):
     assert all(isinstance(population, Population) for population in populations)
 
 
+@pytest.mark.unit
 def test_combine_populations(distance_matrix):
     population1 = Population(size=5, distance_matrix=distance_matrix)
     population2 = Population(size=5, distance_matrix=distance_matrix)
@@ -71,6 +77,7 @@ def test_combine_populations(distance_matrix):
     assert combined_population.routes[0].distance_matrix == distance_matrix
 
 
+@pytest.mark.unit
 def test_serialize_and_deserialize_population(population):
     serialized_data = population.serialize()
     deserialized_population = Population.deserialize(
@@ -83,6 +90,7 @@ def test_serialize_and_deserialize_population(population):
         assert route1.length() == route2.length()
 
 
+@pytest.mark.unit
 def test_get_subset(population):
     subset_size = 3
     subset_population = population.get_subset(subset_size)

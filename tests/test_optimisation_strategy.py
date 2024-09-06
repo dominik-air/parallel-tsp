@@ -25,6 +25,7 @@ def population(distance_matrix):
     return Population(size=3, distance_matrix=distance_matrix)
 
 
+@pytest.mark.unit
 def test_population_to_graph(population):
     G, matrix = population_to_graph(population)
 
@@ -37,6 +38,7 @@ def test_population_to_graph(population):
             assert G[i][j]["weight"] == matrix[i][j]
 
 
+@pytest.mark.unit
 def test_routes_to_population(distance_matrix):
     routes = [[0, 1, 2, 3], [3, 2, 1, 0], [0, 3, 2, 1]]
     population = routes_to_population(routes, distance_matrix)
@@ -48,6 +50,7 @@ def test_routes_to_population(distance_matrix):
         assert np.array_equal(route.distance_matrix, distance_matrix)
 
 
+@pytest.mark.unit
 def test_no_optimization(population):
     strategy = NoOptimization()
     optimized_population = strategy.optimize(population)
@@ -56,6 +59,7 @@ def test_no_optimization(population):
     assert optimized_population.routes == population.routes
 
 
+@pytest.mark.unit
 def test_christofides_optimization(monkeypatch, population):
     def mock_christofides(G):
         return [0, 1, 2, 3, 0]
@@ -73,6 +77,7 @@ def test_christofides_optimization(monkeypatch, population):
         assert len(route.city_indices) == 4
 
 
+@pytest.mark.unit
 def test_greedy_tsp_optimization(monkeypatch, population):
     def mock_greedy_tsp(G):
         return [0, 1, 2, 3, 0]
@@ -90,6 +95,7 @@ def test_greedy_tsp_optimization(monkeypatch, population):
         assert len(route.city_indices) == 4
 
 
+@pytest.mark.unit
 def test_mixed_optimization(monkeypatch, population):
     def mock_greedy_tsp(G):
         return [0, 1, 2, 3, 0]

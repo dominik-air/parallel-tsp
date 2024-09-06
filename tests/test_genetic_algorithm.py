@@ -36,6 +36,7 @@ def genetic_algorithm(population):
     )
 
 
+@pytest.mark.unit
 def test_genetic_algorithm_initialization(genetic_algorithm, population):
     assert genetic_algorithm.population == population
     assert genetic_algorithm.mutation_rate == 0.05
@@ -44,6 +45,7 @@ def test_genetic_algorithm_initialization(genetic_algorithm, population):
     assert genetic_algorithm.best_route is genetic_algorithm.initial_best_route
 
 
+@pytest.mark.unit
 def test_genetic_algorithm_run_iterations(genetic_algorithm, population, monkeypatch):
     monkeypatch.setattr(random, "random", lambda: 0.01)
     monkeypatch.setattr(random, "sample", lambda x, k: x[:k])
@@ -58,6 +60,7 @@ def test_genetic_algorithm_run_iterations(genetic_algorithm, population, monkeyp
     assert final_best_route.length() <= genetic_algorithm.initial_best_route.length()
 
 
+@pytest.mark.unit
 def test_select_best(genetic_algorithm, population, monkeypatch):
     route_lengths = [40, 30, 20, 10]
 
@@ -70,6 +73,7 @@ def test_select_best(genetic_algorithm, population, monkeypatch):
     assert best_route.length() == 10
 
 
+@pytest.mark.unit
 def test_parametrise_genetic_algorithm():
     parametrized_ga = parametrise_genetic_algorithm(
         mutation_rate=0.1,

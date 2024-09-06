@@ -32,6 +32,7 @@ def mock_optimization_strategy():
     return mock
 
 
+@pytest.mark.unit
 @patch("parallel_tsp.runner.MPI.Wtime", side_effect=[0.0, 2.0, 3.0, 5.0])
 def test_genetic_algorithm_runner_run(
     mock_wtime, mock_mpi_strategy, mock_optimization_strategy, comm
@@ -69,6 +70,7 @@ def test_genetic_algorithm_runner_run(
         print(f"Average MPI Strategy Time: {avg_mpi_strategy_time:.4f} seconds")
 
 
+@pytest.mark.unit
 @patch("parallel_tsp.runner.MPI.Wtime", side_effect=[0.0, 1.0, 2.0, 4.0])
 def test_genetic_algorithm_runner_timing(
     mock_wtime, mock_mpi_strategy, mock_optimization_strategy, comm

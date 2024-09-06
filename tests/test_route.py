@@ -19,16 +19,19 @@ def route(distance_matrix):
     return Route(city_indices, distance_matrix)
 
 
+@pytest.mark.unit
 def test_route_initialization(route, distance_matrix):
     assert route.city_indices == [0, 1, 2, 3]
     assert route.distance_matrix == distance_matrix
 
 
+@pytest.mark.unit
 def test_route_length(route):
     # Distance calculation should be 6 (3 -> 0) + 2 (0 -> 1) + 6 (1 -> 2) + 8 (2 -> 3) = 22
     assert route.length() == 22
 
 
+@pytest.mark.unit
 def test_route_mutation(route, monkeypatch):
     monkeypatch.setattr(random, "random", lambda: 0.01)
     monkeypatch.setattr(random, "sample", lambda x, k: [1, 3])
@@ -38,6 +41,7 @@ def test_route_mutation(route, monkeypatch):
     assert route.city_indices == [0, 3, 2, 1]
 
 
+@pytest.mark.unit
 def test_crossover(route, distance_matrix):
     parent1 = Route([0, 1, 2, 3], distance_matrix)
     parent2 = Route([3, 2, 1, 0], distance_matrix)
@@ -51,6 +55,7 @@ def test_crossover(route, distance_matrix):
     assert child2.city_indices == [0, 2, 1, 3]
 
 
+@pytest.mark.unit
 def test_crossover_helper(route, distance_matrix):
     parent1 = Route([0, 1, 2, 3], distance_matrix)
     parent2 = Route([3, 2, 1, 0], distance_matrix)
@@ -63,6 +68,7 @@ def test_crossover_helper(route, distance_matrix):
     assert child.city_indices == [3, 1, 2, 0]
 
 
+@pytest.mark.unit
 def test_mutate_no_change(route, monkeypatch):
     monkeypatch.setattr(random, "random", lambda: 0.99)
 

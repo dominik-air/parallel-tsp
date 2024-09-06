@@ -17,7 +17,7 @@ from parallel_tsp.stop_condition import StopCondition
 
 
 @pytest.mark.functional
-def test_genetic_algorithm_with_christofides_optimization():
+def test_ga_with_christofides_optimization():
     num_cities = 100
     population_size = 20
 
@@ -64,7 +64,7 @@ def test_genetic_algorithm_with_christofides_optimization():
 
 
 @pytest.mark.functional
-def test_genetic_algorithm_with_greedy_optimization():
+def test_ga_with_greedy_optimization():
     num_cities = 100
     population_size = 20
 
@@ -111,7 +111,7 @@ def test_genetic_algorithm_with_greedy_optimization():
 
 
 @pytest.mark.functional
-def test_genetic_algorithm_with_no_optimization():
+def test_ga_with_no_optimization():
     num_cities = 100
     population_size = 20
 
