@@ -1,7 +1,7 @@
 import itertools
 import json
 from functools import partial
-from typing import Any, Dict, List
+from typing import Any
 
 from mpi4py import MPI
 
@@ -22,7 +22,7 @@ from parallel_tsp.runner import GeneticAlgorithmRunner
 from parallel_tsp.stop_condition import StopCondition
 
 
-def split_population(population: Population, num_splits: int) -> List[Population]:
+def split_population(population: Population, num_splits: int) -> list[Population]:
     """Splits the population into sub-populations."""
     sub_population_size = len(population.routes) // num_splits
     return [
@@ -40,9 +40,9 @@ def split_population(population: Population, num_splits: int) -> List[Population
 def run_benchmark(
     mpi_strategy_class: Any,
     optimization_class: Any,
-    params: Dict[str, Dict[str, Any]],
+    params: dict[str, dict[str, Any]],
     num_runs: int = 1,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Run a benchmark with a given set of parameters."""
     results = []
 
@@ -115,7 +115,7 @@ def run_benchmark(
     return None
 
 
-def grid_search(search_space: Dict[str, Dict[str, Any]]) -> List[Dict[str, Any]]:
+def grid_search(search_space: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
     """Perform a grid search over the parameter space."""
     param_combinations = list(
         itertools.product(
